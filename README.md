@@ -28,8 +28,10 @@ Other commands:
 
 ## Deploy
 
-The site is static. On Cloudflare Pages, use build command `npm run build` and
-output directory `dist`.
+The site is static and runs on Cloudflare Workers. Cloudflare runs
+`npm run build` (set in its build settings) and serves the `dist` folder as
+configured in `wrangler.jsonc`. Every push to `main` deploys, and other branches
+get a preview build.
 
 ## Licence
 
