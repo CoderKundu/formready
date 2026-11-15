@@ -28,9 +28,10 @@ Other commands:
 
 ## Deploy
 
-The site is static and runs on Cloudflare Workers. Settings are in
-`wrangler.jsonc`: Cloudflare runs `npm run build` and serves the `dist` folder.
-Every push to `main` deploys, and other branches get a preview build.
+The site is static and runs on Cloudflare Workers. Cloudflare runs
+`npm run build` (set in its build settings) and serves the `dist` folder as
+configured in `wrangler.jsonc`. Every push to `main` deploys, and other branches
+get a preview build.
 
 ## Licence
 
