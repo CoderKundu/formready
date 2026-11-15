@@ -1,0 +1,18 @@
+// Cloudflare Workers settings. FormReady is a static site: Cloudflare serves
+// the Vite build output in dist/ and runs no server code.
+{
+  "name": "formready",
+  "compatibility_date": "2026-11-01",
+  // Build before uploading, so deploys work even if the dashboard has no build command.
+  "build": {
+    "command": "npm run build"
+  },
+  "assets": {
+    "directory": "./dist",
+    // Serve index.html for unknown paths, as a single-page app expects.
+    "not_found_handling": "single-page-application"
+  },
+  // Keep the formready.<account>.workers.dev address and per-branch preview URLs.
+  "workers_dev": true,
+  "preview_urls": true
+}
