@@ -1,3 +1,5 @@
+import { presets } from './presets'
+
 const steps = [
   {
     title: 'Photo',
@@ -13,8 +15,6 @@ const steps = [
   },
 ]
 
-const exams = ['SSC', 'UPSC', 'NTA', 'IBPS', 'UPSSSC']
-
 function App() {
   return (
     <main className="page">
@@ -27,8 +27,10 @@ function App() {
           runs on your device.
         </p>
         <ul className="exams" aria-label="Exams planned for version 1">
-          {exams.map((exam) => (
-            <li key={exam}>{exam}</li>
+          {presets.map((preset) => (
+            <li key={preset.id} title={preset.body}>
+              {preset.name}
+            </li>
           ))}
         </ul>
       </header>

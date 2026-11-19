@@ -25,6 +25,13 @@ Other commands:
 | `npm run build` | Type-checks and builds the site into `dist/` |
 | `npm run preview` | Serves the built site locally |
 | `npm run lint` | Lints the code with Oxlint |
+| `npm test` | Runs the tests with Vitest, including a check of every exam preset |
+
+## Exam presets
+
+Each exam's upload rules are a JSON file in `src/presets/`, checked against the
+Zod schema in `src/presets/schema.ts`. The figures come from the official
+sources listed in [docs/portal-rules.md](docs/portal-rules.md).
 
 ## Deploy
 

@@ -1,0 +1,110 @@
+{
+  "id": "ibps-po",
+  "name": "IBPS PO/MT",
+  "body": "Institute of Banking Personnel Selection",
+  "exam": "CRP PO/MT-XVI (Probationary Officers / Management Trainees)",
+  "source": {
+    "title": "Notification CRP PO/MT-XVI, Annexure III: Guidelines for Scanning and Upload of Documents",
+    "url": "https://www.ibps.in/wp-content/uploads/Detailed-Notification_CRP-PO-XVI_Final_V1_30.06.2026.pdf",
+    "publishedOn": "2026-06-30",
+    "checkedOn": "2026-11-15"
+  },
+  "liveCapture": true,
+  "uploads": [
+    {
+      "id": "photo",
+      "label": "Photograph",
+      "kind": "photo",
+      "format": "jpeg",
+      "size": { "minKB": 20, "maxKB": 50 },
+      "dimensions": { "kind": "pixels", "width": 200, "height": 230, "preferred": true },
+      "required": "always",
+      "rules": [
+        "Recent passport-style colour photo, 4.5 cm x 3.5 cm.",
+        "Light-coloured, preferably white, background.",
+        "Look straight at the camera with a relaxed face; no harsh shadows or red-eye.",
+        "No caps, hats or dark glasses. Religious headwear is allowed if it does not cover the face.",
+        "If you wear glasses, there must be no reflections and your eyes must be clearly visible."
+      ],
+      "conflicts": []
+    },
+    {
+      "id": "signature",
+      "label": "Signature",
+      "kind": "signature",
+      "format": "jpeg",
+      "size": { "minKB": 10, "maxKB": 20 },
+      "dimensions": { "kind": "pixels", "width": 140, "height": 60, "preferred": true },
+      "required": "always",
+      "rules": [
+        "Sign on white paper with a black ink pen.",
+        "Not in capital letters.",
+        "Must match the signature you give at the exam, or you are disqualified."
+      ],
+      "conflicts": []
+    },
+    {
+      "id": "left-thumb-impression",
+      "label": "Left thumb impression",
+      "kind": "thumbImpression",
+      "format": "jpeg",
+      "size": { "minKB": 20, "maxKB": 50 },
+      "dimensions": { "kind": "pixels", "width": 240, "height": 240, "preferred": true },
+      "required": "always",
+      "rules": [
+        "On white paper with black or blue ink.",
+        "3 cm x 3 cm at 200 DPI.",
+        "Without a left thumb, use the right thumb, then a finger, as the notification describes, and name the finger used in the uploaded image."
+      ],
+      "conflicts": []
+    },
+    {
+      "id": "handwritten-declaration",
+      "label": "Handwritten declaration",
+      "kind": "declaration",
+      "format": "jpeg",
+      "size": { "minKB": 50, "maxKB": 100 },
+      "dimensions": { "kind": "pixels", "width": 800, "height": 400, "preferred": true },
+      "required": "always",
+      "rules": [
+        "In your own handwriting, in English only, black ink on white paper.",
+        "Not in capital letters.",
+        "10 cm x 5 cm at 200 DPI.",
+        "Text: \"I, __________ (Name of the candidate), hereby declare that all the information submitted by me in the application form is correct, true and valid. I will present the supporting documents as and when required.\""
+      ],
+      "conflicts": []
+    },
+    {
+      "id": "class10-certificate",
+      "label": "SSC / SSLC / 10th standard or equivalent certificate",
+      "kind": "document",
+      "format": "pdf",
+      "size": { "maxKB": 500 },
+      "required": "always",
+      "pageSize": "A4",
+      "rules": [
+        "Clear and readable."
+      ],
+      "conflicts": []
+    },
+    {
+      "id": "writing-limitation-certificate",
+      "label": "Certificate of limitation to write, for candidates who need a scribe (Clause J (ix))",
+      "kind": "document",
+      "format": "pdf",
+      "size": { "maxKB": 500 },
+      "required": "conditional",
+      "pageSize": "A4",
+      "rules": [
+        "Clear and readable."
+      ],
+      "conflicts": []
+    }
+  ],
+  "notes": [
+    "A live photograph is also captured in the form by webcam, or by scanning a QR code with a phone, in addition to the uploaded photo.",
+    "The portal will not let you continue until the photo and signature meet the specification.",
+    "Scan at a minimum of 200 dpi in True Colour.",
+    "Checked against the PO/MT notification only. Clerk, RRB and SO notifications have their own annexures."
+  ]
+}

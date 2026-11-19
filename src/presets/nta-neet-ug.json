@@ -1,0 +1,144 @@
+{
+  "id": "nta-neet-ug",
+  "name": "NEET (UG)",
+  "body": "National Testing Agency",
+  "exam": "NEET (UG) 2026",
+  "source": {
+    "title": "Information Bulletin NEET (UG)-2026, Chapter 3, Step 2 (d)",
+    "url": "https://cdnbbsr.s3waas.gov.in/s37bc1ec1d9c3426357e69acd5bf320061/uploads/2026/02/202602231394640855.pdf",
+    "checkedOn": "2026-11-15"
+  },
+  "liveCapture": true,
+  "uploads": [
+    {
+      "id": "photo",
+      "label": "Passport size photograph",
+      "kind": "photo",
+      "format": "jpeg",
+      "size": { "minKB": 10, "maxKB": 200 },
+      "required": "always",
+      "minFaceCoverage": 0.8,
+      "rules": [
+        "Taken after 01 January 2026.",
+        "Colour or black and white, against a white background.",
+        "Face including ears visible, without a mask.",
+        "Spectacles only if worn regularly.",
+        "Polaroid and computer-generated photos are not accepted.",
+        "Use the same photo you will paste on the attendance sheet at the exam centre."
+      ],
+      "conflicts": []
+    },
+    {
+      "id": "signature",
+      "label": "Signature",
+      "kind": "signature",
+      "format": "jpeg",
+      "size": { "minKB": 10, "maxKB": 100 },
+      "required": "always",
+      "rules": [],
+      "conflicts": []
+    },
+    {
+      "id": "finger-thumb-impressions",
+      "label": "Left and right hand fingers and thumb impressions",
+      "kind": "thumbImpression",
+      "format": "jpeg",
+      "size": { "minKB": 50, "maxKB": 200 },
+      "required": "always",
+      "rules": [
+        "Unclear impressions are rejected."
+      ],
+      "conflicts": [
+        "Item (d)(iii) says 10 kb to 200 kb; the paragraph on the same upload says 50 kb to 300 kb. This preset uses 50 to 200 KB, which satisfies both."
+      ]
+    },
+    {
+      "id": "identity-proof",
+      "label": "Identity proof (if not verifying through Aadhaar or DigiLocker)",
+      "kind": "document",
+      "format": "jpeg",
+      "size": { "minKB": 50, "maxKB": 200 },
+      "required": "conditional",
+      "rules": [],
+      "conflicts": [
+        "Item (d)(viii) says 10 kb to 200 kb; item (d)(xv) says 50 kb to 300 kb but sits among the scribe items, so it may mean the scribe's ID. This preset uses 50 to 200 KB, which satisfies both."
+      ]
+    },
+    {
+      "id": "class10-certificate",
+      "label": "Class X or equivalent certificate",
+      "kind": "document",
+      "format": "pdf",
+      "size": { "minKB": 50, "maxKB": 300 },
+      "required": "always",
+      "rules": [],
+      "conflicts": []
+    },
+    {
+      "id": "class10-marksheet",
+      "label": "Class X or equivalent marks-sheet",
+      "kind": "document",
+      "format": "pdf",
+      "size": { "minKB": 50, "maxKB": 300 },
+      "required": "always",
+      "rules": [],
+      "conflicts": []
+    },
+    {
+      "id": "cgpa-conversion",
+      "label": "CGPA conversion or equivalence certificate (if Class X marks are in CGPA)",
+      "kind": "document",
+      "format": "pdf",
+      "size": { "minKB": 50, "maxKB": 300 },
+      "required": "conditional",
+      "rules": [],
+      "conflicts": []
+    },
+    {
+      "id": "category-certificate",
+      "label": "Category certificate",
+      "kind": "document",
+      "format": "pdf",
+      "size": { "minKB": 50, "maxKB": 300 },
+      "required": "conditional",
+      "rules": [],
+      "conflicts": []
+    },
+    {
+      "id": "pwbd-certificate",
+      "label": "PwD / PwBD / UDID certificate",
+      "kind": "document",
+      "format": "pdf",
+      "size": { "minKB": 50, "maxKB": 300 },
+      "required": "conditional",
+      "rules": [],
+      "conflicts": []
+    },
+    {
+      "id": "address-proof",
+      "label": "Address proof (present and permanent)",
+      "kind": "document",
+      "format": "pdf",
+      "size": { "minKB": 50, "maxKB": 300 },
+      "required": "always",
+      "rules": [],
+      "conflicts": []
+    },
+    {
+      "id": "nationality-proof",
+      "label": "NRI / OCI / foreign national documentary proof",
+      "kind": "document",
+      "format": "pdf",
+      "size": { "minKB": 50, "maxKB": 300 },
+      "required": "conditional",
+      "rules": [],
+      "conflicts": []
+    }
+  ],
+  "notes": [
+    "A live photograph is also captured in the form by webcam, or by scanning a QR code with a phone, and matched against Aadhaar records.",
+    "Keep 6 to 8 passport size and 4 to 6 post card size (4\" x 6\") colour photographs with a white background for the exam centre and counselling. The post card photo is not uploaded.",
+    "Scribe uploads (signature, qualification certificate, undertaking, identity proof, certificate of physical limitation) are not included.",
+    "The NEET (UG) 2027 bulletin was not published when this was checked."
+  ]
+}
