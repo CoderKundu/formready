@@ -1,0 +1,51 @@
+{
+  "id": "upsssc",
+  "name": "UPSSSC",
+  "body": "Uttar Pradesh Subordinate Services Selection Commission",
+  "exam": "UPSSSC online applications (guideline names no advertisement or year)",
+  "source": {
+    "title": "GuideLines for Scanning Photograph with Signature",
+    "url": "https://upsssc.gov.in/GuidLineUploadPhoto.htm",
+    "checkedOn": "2026-11-15"
+  },
+  "liveCapture": false,
+  "uploads": [
+    {
+      "id": "photo",
+      "label": "Photograph",
+      "kind": "photo",
+      "format": "jpeg",
+      "size": { "minKB": 50, "maxKB": 100 },
+      "dimensions": { "kind": "centimetres", "width": 3.5, "height": 4.5, "approximate": false },
+      "required": "always",
+      "rules": [
+        "Scan only the photo area, not the whole page."
+      ],
+      "conflicts": [
+        "Point 4 says 50KB to 100KB; the sample specification on the same page says under 50 KB. This preset uses point 4. Check what the live form accepts."
+      ]
+    },
+    {
+      "id": "signature",
+      "label": "Signature",
+      "kind": "signature",
+      "format": "jpeg",
+      "size": { "minKB": 20, "maxKB": 50 },
+      "dimensions": { "kind": "centimetres", "width": 3.5, "height": 1.5, "approximate": false },
+      "required": "always",
+      "rules": [
+        "Sign in full; initials are not accepted.",
+        "Not in capital letters.",
+        "Must be signed by the applicant, and must match the signature at the exam."
+      ],
+      "conflicts": [
+        "Point 4 says 20KB to 50KB; point 5 and the sample specification say under 20 KB. This preset uses point 4. Check what the live form accepts."
+      ]
+    }
+  ],
+  "notes": [
+    "The guideline page is undated and names no advertisement, so these are the least certain figures of all the presets.",
+    "The page does not mention a live photo capture.",
+    "The sample scan on the page uses 200 dpi, True Colour."
+  ]
+}

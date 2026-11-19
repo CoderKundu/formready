@@ -1,0 +1,36 @@
+{
+  "id": "ssc-cgl",
+  "name": "SSC CGL",
+  "body": "Staff Selection Commission",
+  "exam": "Combined Graduate Level Examination, 2026",
+  "source": {
+    "title": "Notice, Combined Graduate Level Examination, 2026",
+    "url": "https://ssc.gov.in/api/attachment/uploads/masterData/NoticeBoards/Notice_of_adv_cgl_2025.pdf",
+    "publishedOn": "2026-05-21",
+    "checkedOn": "2026-11-15"
+  },
+  "liveCapture": true,
+  "uploads": [
+    {
+      "id": "signature",
+      "label": "Signature",
+      "kind": "signature",
+      "format": "jpeg",
+      "size": { "minKB": 10, "maxKB": 20 },
+      "dimensions": { "kind": "centimetres", "width": 6, "height": 2, "approximate": true },
+      "required": "always",
+      "rules": [
+        "Blurred or miniature signatures are rejected."
+      ],
+      "conflicts": [
+        "Para 9.6 gives the width as about 6.0 cm; Annexure IV gives about 4.0 cm. Height is 2.0 cm in both. This preset uses 6.0 cm from the main text."
+      ]
+    }
+  ],
+  "notes": [
+    "The photograph is not uploaded as a file. The form captures a live photo by webcam or phone, and a photo of an existing photograph is rejected.",
+    "Live photo: plain background, good light, camera at eye level, face fully inside the frame, no cap, mask or glasses.",
+    "Applications authenticated through Aadhaar are not rejected on photo or signature grounds.",
+    "Candidates without Aadhaar upload proof of name, date of birth, address and gender at One Time Registration; the notice gives no format or size for these."
+  ]
+}

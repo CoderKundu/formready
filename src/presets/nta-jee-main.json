@@ -1,0 +1,82 @@
+{
+  "id": "nta-jee-main",
+  "name": "JEE (Main)",
+  "body": "National Testing Agency",
+  "exam": "JEE (Main) 2027",
+  "source": {
+    "title": "Information Bulletin, Joint Entrance Examination (Main) - 2027, Step 2: Application Form",
+    "url": "https://cdnbbsr.s3waas.gov.in/s3f8e59f4b2fe7c5705bf878bbd494ccdf/uploads/2026/10/202610241890224107.pdf",
+    "checkedOn": "2026-11-15"
+  },
+  "liveCapture": true,
+  "uploads": [
+    {
+      "id": "photo",
+      "label": "Passport size photograph",
+      "kind": "photo",
+      "format": "jpeg",
+      "size": { "minKB": 10, "maxKB": 200 },
+      "required": "always",
+      "minFaceCoverage": 0.8,
+      "rules": [
+        "Recent colour photo against a white background.",
+        "Face including ears visible, without a mask."
+      ],
+      "conflicts": []
+    },
+    {
+      "id": "signature",
+      "label": "Signature",
+      "kind": "signature",
+      "format": "jpeg",
+      "size": { "minKB": 10, "maxKB": 100 },
+      "required": "always",
+      "rules": [],
+      "conflicts": []
+    },
+    {
+      "id": "class10-certificate",
+      "label": "Class 10 or equivalent certificate / marks-sheet",
+      "kind": "document",
+      "format": "pdf",
+      "size": { "minKB": 50, "maxKB": 300 },
+      "required": "always",
+      "rules": [],
+      "conflicts": []
+    },
+    {
+      "id": "disability-certificate",
+      "label": "Disability / UDID certificate",
+      "kind": "document",
+      "format": "pdf",
+      "size": { "minKB": 50, "maxKB": 300 },
+      "required": "conditional",
+      "rules": [],
+      "conflicts": []
+    },
+    {
+      "id": "writing-limitation-certificate",
+      "label": "Certificate of physical limitation to write",
+      "kind": "document",
+      "format": "pdf",
+      "size": { "minKB": 50, "maxKB": 300 },
+      "required": "conditional",
+      "rules": [],
+      "conflicts": []
+    },
+    {
+      "id": "non-indian-passport",
+      "label": "Non-Indian passport (foreign nationals including OCI)",
+      "kind": "document",
+      "format": "pdf",
+      "size": { "minKB": 50, "maxKB": 300 },
+      "required": "conditional",
+      "rules": [],
+      "conflicts": []
+    }
+  ],
+  "notes": [
+    "A live photograph is also captured in the form by webcam, or by scanning a QR code with a phone.",
+    "Session 1 (January 2027) applications run from 24 October 2026 to 22 November 2026."
+  ]
+}

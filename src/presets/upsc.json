@@ -1,0 +1,126 @@
+{
+  "id": "upsc",
+  "name": "UPSC",
+  "body": "Union Public Service Commission",
+  "exam": "All UPSC examinations (checked against Civil Services Examination, 2026)",
+  "source": {
+    "title": "Instructions for uploading documents (upsconline.nic.in, Instructions and FAQs)",
+    "url": "https://upsconline.nic.in/candidate/resources/bzh30/login/upsc-candidates-portal/dist/assets/Instructions%20for%20uploading%20documents-new-2-CFBYTKvU.pdf",
+    "checkedOn": "2026-11-15"
+  },
+  "liveCapture": true,
+  "uploads": [
+    {
+      "id": "photo",
+      "label": "Photograph",
+      "kind": "photo",
+      "format": "jpeg",
+      "size": { "minKB": 20, "maxKB": 200 },
+      "fileName": "photo",
+      "required": "always",
+      "minFaceCoverage": 0.75,
+      "rules": [
+        "Recent colour photo.",
+        "Plain white background.",
+        "Frontal view of the full face, head in the centre, both ears visible.",
+        "Eyes open and not covered by hair; no dark or coloured glasses.",
+        "No shadows on the face or background.",
+        "Natural expression.",
+        "The photograph must not be signed."
+      ],
+      "conflicts": []
+    },
+    {
+      "id": "signature",
+      "label": "Signature (three times)",
+      "kind": "signature",
+      "format": "jpeg",
+      "size": { "minKB": 20, "maxKB": 100 },
+      "dimensions": { "kind": "pixelRange", "min": 350, "max": 500, "appliesTo": "unspecified" },
+      "fileName": "signature",
+      "required": "always",
+      "rules": [
+        "Sign three times, one below the other, with a gap between each.",
+        "Black ink on plain white paper with no lines or colours.",
+        "Scan all three signatures as a single image, upright and not rotated.",
+        "The image must be clear, sharp and well lit."
+      ],
+      "conflicts": [
+        "\"350 - 500 pixels\" does not say whether it applies to width, height or both."
+      ]
+    },
+    {
+      "id": "photo-id",
+      "label": "Photo ID (Aadhaar or other photo ID)",
+      "kind": "document",
+      "format": "jpeg",
+      "size": { "minKB": 20, "maxKB": 200 },
+      "fileName": "id_card",
+      "required": "always",
+      "rules": [],
+      "conflicts": []
+    },
+    {
+      "id": "board-certificate",
+      "label": "Matriculation board or equivalent certificate",
+      "kind": "document",
+      "format": "pdf",
+      "size": { "minKB": 50, "maxKB": 300 },
+      "fileName": "board_certificate",
+      "required": "always",
+      "rules": [],
+      "conflicts": []
+    },
+    {
+      "id": "name-change",
+      "label": "Name change affidavit or gazette notification",
+      "kind": "document",
+      "format": "pdf",
+      "size": { "minKB": 50, "maxKB": 300 },
+      "fileName": "name_change",
+      "required": "conditional",
+      "rules": [],
+      "conflicts": []
+    },
+    {
+      "id": "caste-certificate",
+      "label": "Caste certificate",
+      "kind": "document",
+      "format": "pdf",
+      "size": { "minKB": 50, "maxKB": 300 },
+      "fileName": "caste_certificate",
+      "required": "conditional",
+      "rules": [],
+      "conflicts": []
+    },
+    {
+      "id": "disability-certificate",
+      "label": "Disability certificate",
+      "kind": "document",
+      "format": "pdf",
+      "size": { "minKB": 50, "maxKB": 300 },
+      "fileName": "disability_certificate",
+      "required": "conditional",
+      "rules": [],
+      "conflicts": []
+    },
+    {
+      "id": "pwbd-recommendation",
+      "label": "PwD / PwBD recommendation certificate",
+      "kind": "document",
+      "format": "pdf",
+      "size": { "minKB": 50, "maxKB": 300 },
+      "fileName": "pw_recommendation",
+      "required": "conditional",
+      "rules": [],
+      "conflicts": []
+    }
+  ],
+  "notes": [
+    "File names are enforced: the portal refuses a document with any other name, format or size.",
+    "A live photograph is also captured in the form and matched against the uploaded photo; a mismatch stops the application.",
+    "Photo and signature rules are also in \"Instructions for uploading the photo & signature\" on the same portal, which gives the same figures.",
+    "The portal links contain build hashes and break when the portal is rebuilt. Find them again at upsconline.nic.in under Instructions and FAQs.",
+    "EPFO examination uploads (bachelor's marksheet and degree, scribe photo and signature, and others) are not included."
+  ]
+}
