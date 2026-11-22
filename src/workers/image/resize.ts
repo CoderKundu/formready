@@ -1,3 +1,4 @@
+import { replaceBackground } from './background'
 import { decodeImage } from './decode'
 import { clampRect, containRect, coverCrop, downscaleSteps, type Rect, type Size } from './geometry'
 
@@ -27,6 +28,9 @@ export interface ResizeOptions {
   quality?: number
   // Fill for transparent areas and "contain" bars. JPEG has no transparency.
   background?: string
+  // Replace everything except the person with `background` (white by
+  // default). Loads MediaPipe's segmentation model on first use.
+  replaceBackground?: boolean
 }
 
 export interface ResizedImage {
@@ -81,10 +85,12 @@ export async function resizeImage(blob: Blob, options: ResizeOptions): Promise<R
       destination = containRect(area, target)
     }
 
-    const drawn = drawScaled(image.bitmap, source, {
+    let drawn = drawScaled(image.bitmap, source, {
       width: Math.max(1, Math.round(destination.width)),
       height: Math.max(1, Math.round(destination.height)),
     })
+    // Segment at output size: a few hundred pixels, so it is quick on phones.
+    if (options.replaceBackground) drawn = await replaceBackground(drawn, background)
 
     const canvas = new OffscreenCanvas(target.width, target.height)
     const context = canvas.getContext('2d')!

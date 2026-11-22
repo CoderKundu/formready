@@ -12,6 +12,8 @@ export interface AutoCropOptions {
   headCoverage?: number
   format?: 'jpeg' | 'png'
   quality?: number
+  // Replace a cluttered background with plain white.
+  whiteBackground?: boolean
 }
 
 export type AutoCropProblem =
@@ -36,9 +38,10 @@ export async function autoCropPortrait(blob: Blob, options: AutoCropOptions): Pr
   const { image, faces } = await detectFaces(blob)
   const format = options.format ?? 'jpeg'
   const quality = options.quality ?? 0.92
+  const background = { background: '#ffffff', replaceBackground: options.whiteBackground ?? false }
 
   if (faces.length === 0) {
-    const resized = await resizeImage(blob, { ...output, fit: 'cover', format, quality })
+    const resized = await resizeImage(blob, { ...output, fit: 'cover', format, quality, ...background })
     const aspect = output.width / output.height
     const cropWidth = Math.min(image.width, image.height * aspect)
     const cropHeight = cropWidth / aspect
@@ -57,7 +60,14 @@ export async function autoCropPortrait(blob: Blob, options: AutoCropOptions): Pr
 
   const face = faces[0]
   const plan = planPortraitCrop(face, image, { output, headCoverage: options.headCoverage })
-  const resized = await resizeImage(blob, { ...output, fit: 'cover', crop: plan.crop, format, quality })
+  const resized = await resizeImage(blob, {
+    ...output,
+    fit: 'cover',
+    crop: plan.crop,
+    format,
+    quality,
+    ...background,
+  })
   return {
     ...resized,
     crop: plan.crop,

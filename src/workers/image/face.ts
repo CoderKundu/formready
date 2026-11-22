@@ -1,48 +1,27 @@
 import type { FaceDetector } from '@mediapipe/tasks-vision'
-import wasmLoaderUrl from '@mediapipe/tasks-vision/vision_wasm_module_internal.js?url'
-import wasmBinaryUrl from '@mediapipe/tasks-vision/vision_wasm_module_internal.wasm?url'
 import modelUrl from '../../assets/models/blaze_face_short_range.tflite?url'
 import { decodeImage } from './decode'
 import type { Size } from './geometry'
+import { createVisionTask, fetchModel, once, visionFileset } from './mediapipe'
 import type { Face } from './portrait'
 
 // Face detection with MediaPipe's BlazeFace short-range model, which is
 // built for faces within about 2 metres of the camera, as in a selfie or a
 // passport photo. Everything is served from this site: nothing is sent to
 // Google or anyone else.
-//
-// The MediaPipe runtime is a 14.6 MB WASM file (about 2.8 MB compressed),
-// so it is loaded on first use and kept for the session.
 
-let detector: Promise<FaceDetector> | undefined
-
-export function loadFaceDetector(): Promise<FaceDetector> {
-  if (!detector) {
-    detector = (async () => {
-      const [{ FaceDetector }, model] = await Promise.all([
-        import('@mediapipe/tasks-vision'),
-        fetch(modelUrl).then((response) => {
-          if (!response.ok) throw new Error(`HTTP ${response.status}`)
-          return response.arrayBuffer()
-        }),
-      ])
-      return FaceDetector.createFromOptions(
-        { wasmLoaderPath: wasmLoaderUrl, wasmBinaryPath: wasmBinaryUrl },
-        {
-          baseOptions: { modelAssetBuffer: new Uint8Array(model), delegate: 'CPU' },
-          runningMode: 'IMAGE',
-          // Real faces score 0.8 or more; at the default 0.5, things like a
-          // helmet visor were reported as faces.
-          minDetectionConfidence: 0.6,
-        },
-      )
-    })()
-    detector.catch(() => {
-      detector = undefined
-    })
-  }
-  return detector
-}
+export const loadFaceDetector = once(async (): Promise<FaceDetector> => {
+  const model = await fetchModel(modelUrl)
+  return createVisionTask(({ FaceDetector }) =>
+    FaceDetector.createFromOptions(visionFileset, {
+      baseOptions: { modelAssetBuffer: model, delegate: 'CPU' },
+      runningMode: 'IMAGE',
+      // Real faces score 0.8 or more; at the default 0.5, things like a
+      // helmet visor were reported as faces.
+      minDetectionConfidence: 0.6,
+    }),
+  )
+})
 
 export interface FaceDetection {
   // Upright size of the photo, in full-size pixels.
