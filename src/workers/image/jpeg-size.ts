@@ -116,3 +116,57 @@ function afterAppSegments(jpeg: Uint8Array): number {
   }
   return Math.min(offset, jpeg.length)
 }
+
+// Records the resolution in the JPEG's JFIF header, so the file opens and
+// prints at the intended physical size (276 x 354 pixels at 200 dpi is
+// 3.5 x 4.5 cm). Browsers write JFIF headers with no units. If the file has
+// no JFIF header, one is added after the start marker.
+export function setJpegDpi(jpeg: Uint8Array, dpi: number): Uint8Array {
+  if (jpeg[0] !== 0xff || jpeg[1] !== 0xd8) throw new Error('Not a JPEG file.')
+  const density = Math.max(1, Math.min(65535, Math.round(dpi)))
+
+  const hasJfif =
+    jpeg.length >= 20 &&
+    jpeg[2] === 0xff &&
+    jpeg[3] === 0xe0 &&
+    jpeg[6] === 0x4a && // J
+    jpeg[7] === 0x46 && // F
+    jpeg[8] === 0x49 && // I
+    jpeg[9] === 0x46 && // F
+    jpeg[10] === 0x00
+  if (hasJfif) {
+    const out = jpeg.slice()
+    out[13] = 1 // units: dots per inch
+    out[14] = density >> 8
+    out[15] = density & 0xff
+    out[16] = density >> 8
+    out[17] = density & 0xff
+    return out
+  }
+
+  const header = new Uint8Array([
+    0xff, 0xe0, 0x00, 0x10, // APP0, length 16
+    0x4a, 0x46, 0x49, 0x46, 0x00, // "JFIF\0"
+    0x01, 0x01, // version 1.01
+    0x01, // units: dots per inch
+    density >> 8, density & 0xff,
+    density >> 8, density & 0xff,
+    0x00, 0x00, // no thumbnail
+  ])
+  const out = new Uint8Array(jpeg.length + header.length)
+  out.set(jpeg.subarray(0, 2))
+  out.set(header, 2)
+  out.set(jpeg.subarray(2), 2 + header.length)
+  return out
+}
+
+// Resolution recorded in a JPEG's JFIF header, or undefined if it has none
+// or records only an aspect ratio.
+export function readJpegDpi(jpeg: Uint8Array): number | undefined {
+  if (jpeg[2] !== 0xff || jpeg[3] !== 0xe0 || jpeg[6] !== 0x4a || jpeg[10] !== 0x00) return undefined
+  const units = jpeg[13]
+  const x = (jpeg[14] << 8) | jpeg[15]
+  if (units === 1) return x
+  if (units === 2) return Math.round(x * 2.54) // dots per cm
+  return undefined
+}

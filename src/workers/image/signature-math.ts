@@ -117,13 +117,129 @@ export function labelInk(
   return { labels, components }
 }
 
+export interface BrightnessSplit {
+  threshold: number
+  meanDark: number
+  meanBright: number
+}
+
+// Brightness level that best splits a photo into dark and bright (Otsu's
+// method): the level that makes the two groups most distinct.
+export function otsuThreshold(gray: Uint8Array): number {
+  return otsuSplit(gray).threshold
+}
+
+export function otsuSplit(gray: Uint8Array): BrightnessSplit {
+  const histogram = new Float64Array(256)
+  for (const value of gray) histogram[value]++
+  let sumAll = 0
+  for (let level = 0; level < 256; level++) sumAll += level * histogram[level]
+
+  let best = 127
+  let bestSpread = -1
+  let bestMeans = [127, 127]
+  let countBelow = 0
+  let sumBelow = 0
+  for (let level = 0; level < 256; level++) {
+    countBelow += histogram[level]
+    if (countBelow === 0) continue
+    const countAbove = gray.length - countBelow
+    if (countAbove === 0) break
+    sumBelow += level * histogram[level]
+    const meanBelow = sumBelow / countBelow
+    const meanAbove = (sumAll - sumBelow) / countAbove
+    const spread = countBelow * countAbove * (meanBelow - meanAbove) ** 2
+    if (spread > bestSpread) {
+      bestSpread = spread
+      best = level
+      bestMeans = [meanBelow, meanAbove]
+    }
+  }
+  return { threshold: best, meanDark: bestMeans[0], meanBright: bestMeans[1] }
+}
+
+// A table is far darker than paper (a mean gap of 70 or more levels) and
+// meets it at a sharp edge, so few pixels have in-between brightness. A
+// shadow across the paper is a gradual fade with many in-between pixels;
+// it must not be mistaken for the table, or ink in the shadow would be lost.
+const MIN_TABLE_CONTRAST = 70
+const MAX_IN_BETWEEN_SHARE = 0.1
+
+function looksLikePaperOnTable(gray: Uint8Array, split: BrightnessSplit): boolean {
+  const gap = split.meanBright - split.meanDark
+  if (gap < MIN_TABLE_CONTRAST) return false
+  const low = split.meanDark + gap / 4
+  const high = split.meanBright - gap / 4
+  let between = 0
+  for (const value of gray) if (value > low && value < high) between++
+  return between / gray.length < MAX_IN_BETWEEN_SHARE
+}
+
+// Where the sheet of paper is, when the photo also shows the table around
+// it: the rows and columns that are mostly bright. Undefined when the paper
+// fills (nearly) the whole photo, or the photo is not a light page on a
+// darker surface.
+//
+// Needed because where bright paper meets a dark table, the table looks
+// much darker than its surroundings, so a band all round the paper passes
+// the ink test.
+export function paperBounds(gray: Uint8Array, width: number, height: number): Rect | undefined {
+  const split = otsuSplit(gray)
+  if (!looksLikePaperOnTable(gray, split)) return undefined
+  const { threshold } = split
+  const rowBright = new Float64Array(height)
+  const columnBright = new Float64Array(width)
+  for (let y = 0; y < height; y++) {
+    for (let x = 0; x < width; x++) {
+      if (gray[y * width + x] > threshold) {
+        rowBright[y]++
+        columnBright[x]++
+      }
+    }
+  }
+  // A row or column belongs to the paper if over half of it is bright.
+  const first = (counts: Float64Array, length: number) => counts.findIndex((count) => count > length / 2)
+  const last = (counts: Float64Array, length: number) => {
+    for (let i = counts.length - 1; i >= 0; i--) if (counts[i] > length / 2) return i
+    return -1
+  }
+  const top = first(rowBright, width)
+  const bottom = last(rowBright, width)
+  const left = first(columnBright, height)
+  const right = last(columnBright, height)
+  if (top < 0 || left < 0) return undefined
+
+  const bounds = { x: left, y: top, width: right - left + 1, height: bottom - top + 1 }
+  // Paper fills the photo: nothing to exclude.
+  if (bounds.width > width * 0.97 && bounds.height > height * 0.97) return undefined
+  // Too small to be the sheet; better not to guess.
+  if (bounds.width < width * 0.2 || bounds.height < height * 0.2) return undefined
+  return bounds
+}
+
 // Which components are part of the signature. Drops specks (paper grain,
-// dust) and large dark areas touching the photo's edge (the table or a
-// shadow beside the paper).
-export function signatureComponents(components: InkComponent[], width: number, height: number): boolean[] {
+// dust), large dark areas touching the photo's edge (the table or a shadow
+// beside the paper), and, when the paper's position is known, anything not
+// well inside the paper (the band along its edge).
+export function signatureComponents(
+  components: InkComponent[],
+  width: number,
+  height: number,
+  paper?: Rect,
+): boolean[] {
   const minArea = Math.max(12, Math.round(width * height * 0.00002))
+  const inset = Math.max(4, Math.round(Math.min(width, height) * 0.01))
   return components.map(({ area, bounds }) => {
     if (area < minArea) return false
+    if (
+      paper &&
+      (bounds.x < paper.x + inset ||
+        bounds.y < paper.y + inset ||
+        bounds.x + bounds.width > paper.x + paper.width - inset ||
+        bounds.y + bounds.height > paper.y + paper.height - inset)
+    ) {
+      return false
+    }
     const touchesEdge =
       bounds.x === 0 || bounds.y === 0 || bounds.x + bounds.width === width || bounds.y + bounds.height === height
     const spansPhoto = bounds.width > width * 0.5 || bounds.height > height * 0.5

@@ -4,6 +4,8 @@ import {
   inkStrength,
   keepInk,
   labelInk,
+  otsuThreshold,
+  paperBounds,
   signatureComponents,
   thicken,
   thickenRadius,
@@ -140,5 +142,55 @@ describe('thicken and thickenRadius', () => {
     expect(thickenRadius(4)).toBe(1)
     expect(thickenRadius(15)).toBe(6)
     expect(thickenRadius(100)).toBe(10)
+  })
+})
+
+describe('paperBounds', () => {
+  // A dark table with a sheet of paper on it, a signature on the paper.
+  function onTable(): Uint8Array {
+    const gray = new Uint8Array(W * H).fill(60)
+    for (let y = 15; y < 85; y++) for (let x = 20; x < 180; x++) gray[y * W + x] = 235
+    for (let x = 60; x <= 140; x++) for (let dy = 0; dy < 3; dy++) gray[(50 + dy) * W + x] = 30
+    return gray
+  }
+
+  it('splits dark table from bright paper', () => {
+    const threshold = otsuThreshold(onTable())
+    expect(threshold).toBeGreaterThanOrEqual(60)
+    expect(threshold).toBeLessThan(235)
+  })
+
+  it('finds the sheet on the table', () => {
+    expect(paperBounds(onTable(), W, H)).toEqual({ x: 20, y: 15, width: 160, height: 70 })
+  })
+
+  it('keeps the signature and drops the band along the paper edge', () => {
+    const gray = onTable()
+    const strength = inkStrength(gray, W, H)
+    const { components } = labelInk(strength, W, H)
+    const withoutPaper = signatureComponents(components, W, H)
+    const withPaper = signatureComponents(components, W, H, paperBounds(gray, W, H))
+    // Without knowing where the paper is, the edge band survives.
+    expect(withoutPaper.filter(Boolean).length).toBeGreaterThan(1)
+    const kept = components.filter((_, i) => withPaper[i])
+    expect(kept).toHaveLength(1)
+    expect(kept[0].bounds).toMatchObject({ x: 60, y: 50, width: 81, height: 3 })
+  })
+
+  it('returns nothing when the paper fills the photo', () => {
+    const gray = new Uint8Array(W * H).fill(235)
+    for (let x = 20; x <= 120; x++) for (let dy = 0; dy < 3; dy++) gray[(50 + dy) * W + x] = 30
+    expect(paperBounds(gray, W, H)).toBeUndefined()
+  })
+
+  it('does not mistake a shadow across the paper for the table', () => {
+    // The test scene fades from 235 to 125 across the page: a shadow, not an edge.
+    const gray = scene(W, H, (set) => stroke(set, 140, 190, 40, 95))
+    expect(paperBounds(gray, W, H)).toBeUndefined()
+    // So ink in the shadowed half is still kept.
+    const strength = inkStrength(gray, W, H)
+    const { components } = labelInk(strength, W, H)
+    const keep = signatureComponents(components, W, H, paperBounds(gray, W, H))
+    expect(components.filter((_, i) => keep[i]).map((c) => c.bounds.x)).toEqual([140])
   })
 })

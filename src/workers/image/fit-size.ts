@@ -1,6 +1,6 @@
 import { maxBytesFor, minBytesFor } from '../kilobytes'
 import { decodeImage } from './decode'
-import { MIN_QUALITY, nextScale, padJpeg, searchQuality } from './jpeg-size'
+import { MIN_QUALITY, nextScale, padJpeg, searchQuality, setJpegDpi } from './jpeg-size'
 import { drawScaled } from './resize'
 
 // Re-encodes an image as a JPEG between the portal's minimum and maximum
@@ -12,6 +12,9 @@ export interface FitSizeOptions {
   // When even the lowest quality is too big, shrink the pixel size and try
   // again. Leave off when the portal fixes the pixel size (e.g. 200 x 230).
   allowShrink?: boolean
+  // Resolution to record in the file, so it prints at the intended size
+  // (see outputSizeFor in presets/output-size.ts).
+  dpi?: number
 }
 
 export interface FitSizeResult {
@@ -57,7 +60,12 @@ export async function fitImageToSize(blob: Blob, options: FitSizeOptions): Promi
       context.drawImage(canvas, 0, 0)
 
       const search = await searchQuality(async (quality) => {
-        const output = await flat.convertToBlob({ type: 'image/jpeg', quality })
+        let output = await flat.convertToBlob({ type: 'image/jpeg', quality })
+        // Record the DPI before measuring, since it can add a few bytes.
+        if (options.dpi) {
+          const bytes = setJpegDpi(new Uint8Array(await output.arrayBuffer()), options.dpi)
+          output = new Blob([bytes as Uint8Array<ArrayBuffer>], { type: 'image/jpeg' })
+        }
         return { bytes: output.size, output }
       }, maxBytes)
 

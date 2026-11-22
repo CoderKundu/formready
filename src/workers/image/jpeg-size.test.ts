@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { readJpegOrientation, withJpegOrientation } from './exif'
-import { MAX_QUALITY, MIN_QUALITY, nextScale, padJpeg, searchQuality } from './jpeg-size'
+import { MAX_QUALITY, MIN_QUALITY, nextScale, padJpeg, readJpegDpi, searchQuality, setJpegDpi } from './jpeg-size'
 
 // Fake encoder: size grows with quality, like a real JPEG encoder.
 function fakeEncoder(bytesAt: (quality: number) => number) {
@@ -123,5 +123,42 @@ describe('padJpeg', () => {
 
   it('rejects files that are not JPEGs', () => {
     expect(() => padJpeg(new Uint8Array([0x89, 0x50]), 100)).toThrow('Not a JPEG')
+  })
+})
+
+describe('setJpegDpi and readJpegDpi', () => {
+  // Start marker, a browser-style JFIF header with no units, start of scan.
+  const browserJpeg = new Uint8Array([
+    0xff, 0xd8,
+    0xff, 0xe0, 0x00, 0x10, 0x4a, 0x46, 0x49, 0x46, 0x00, 0x01, 0x01, 0x00, 0x00, 0x01, 0x00, 0x01, 0x00, 0x00,
+    0xff, 0xda, 0x00, 0x02, 0xff, 0xd9,
+  ])
+
+  it('reads no DPI from a browser JPEG', () => {
+    expect(readJpegDpi(browserJpeg)).toBeUndefined()
+  })
+
+  it('sets the DPI in an existing JFIF header without changing the length', () => {
+    const out = setJpegDpi(browserJpeg, 200)
+    expect(out.length).toBe(browserJpeg.length)
+    expect(readJpegDpi(out)).toBe(200)
+    // Everything after the header is untouched.
+    expect([...out.subarray(20)]).toEqual([...browserJpeg.subarray(20)])
+  })
+
+  it('adds a JFIF header when there is none', () => {
+    const bare = new Uint8Array([0xff, 0xd8, 0xff, 0xda, 0x00, 0x02, 0xff, 0xd9])
+    const out = setJpegDpi(bare, 300)
+    expect(out.length).toBe(bare.length + 18)
+    expect(readJpegDpi(out)).toBe(300)
+    expect([...out.subarray(20)]).toEqual([...bare.subarray(2)])
+  })
+
+  it('keeps EXIF and padding working afterwards', () => {
+    const withDpi = setJpegDpi(browserJpeg, 200)
+    const padded = padJpeg(withDpi, 5000)
+    expect(padded.length).toBe(5000)
+    expect(readJpegDpi(padded)).toBe(200)
+    expect(readJpegOrientation(withJpegOrientation(withDpi, 3))).toBe(3)
   })
 })

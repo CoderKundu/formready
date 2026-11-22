@@ -6,6 +6,7 @@ import {
   inkStrength,
   keepInk,
   labelInk,
+  paperBounds,
   signatureComponents,
   thicken,
   thickenRadius,
@@ -65,9 +66,10 @@ export async function cleanSignature(blob: Blob, options: SignatureOptions): Pro
   const { width, height } = working
   const context = working.getContext('2d', { willReadFrequently: true })!
   const pixels = context.getImageData(0, 0, width, height)
-  const strength = inkStrength(toGray(pixels.data), width, height)
+  const gray = toGray(pixels.data)
+  const strength = inkStrength(gray, width, height)
   const { labels, components } = labelInk(strength, width, height)
-  const keep = signatureComponents(components, width, height)
+  const keep = signatureComponents(components, width, height, paperBounds(gray, width, height))
   const ink = keepInk(strength, labels, keep, width, height)
   const bounds = inkBounds(components, keep, width, height)
 
