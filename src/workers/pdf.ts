@@ -5,6 +5,8 @@ import { EncryptedPDFError, PDFDocument } from 'pdf-lib'
 
 export interface PdfInfo {
   pageCount: number
+  // Each page's size in points (1/72 inch), as shown (rotation applied).
+  pageSizes: { width: number; height: number }[]
 }
 
 // One page in the merged output: which input file it comes from and which
@@ -30,7 +32,12 @@ async function load(blob: Blob, label: string): Promise<PDFDocument> {
 
 export async function inspectPdf(blob: Blob, label = 'This file'): Promise<PdfInfo> {
   const doc = await load(blob, label)
-  return { pageCount: doc.getPageCount() }
+  const pageSizes = doc.getPages().map((page) => {
+    const { width, height } = page.getSize()
+    const turned = page.getRotation().angle % 180 !== 0
+    return turned ? { width: height, height: width } : { width, height }
+  })
+  return { pageCount: pageSizes.length, pageSizes }
 }
 
 // Builds one PDF from the given pages, in the given order. A page can come

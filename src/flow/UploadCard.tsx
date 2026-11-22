@@ -1,8 +1,9 @@
-import { useEffect, useId, useMemo, type ChangeEvent } from 'react'
+import { useId, type ChangeEvent } from 'react'
 import type { Upload } from '../presets'
 import { outputSizeFor } from '../presets/output-size'
 import { prepareImage, preparePdf, type ImageSettings } from './prepare'
 import type { UploadState } from './upload-state'
+import { sizeRuleNote, type Check } from './validate'
 
 // One upload the exam asks for: what it needs, a file picker, and the
 // prepared result with a download link.
@@ -11,6 +12,12 @@ interface UploadCardProps {
   upload: Upload
   state: UploadState
   onChange: (update: (state: UploadState) => UploadState) => void
+}
+
+const RESULT_TEXT: Record<Check['result'], { mark: string; word: string }> = {
+  pass: { mark: '✓', word: 'Passes' },
+  fail: { mark: '×', word: 'Fails' },
+  info: { mark: 'i', word: 'Note' },
 }
 
 const KIND_HINTS: Record<Upload['kind'], string> = {
@@ -26,36 +33,27 @@ export default function UploadCard({ upload, state, onChange }: UploadCardProps)
   const isPdf = upload.format === 'pdf'
   const size = outputSizeFor(upload)
 
-  const previewUrl = useMemo(
-    () => (state.prepared && !isPdf ? URL.createObjectURL(state.prepared.blob) : undefined),
-    [state.prepared, isPdf],
-  )
-  const downloadUrl = useMemo(
-    () => (state.prepared ? URL.createObjectURL(state.prepared.blob) : undefined),
-    [state.prepared],
-  )
-  useEffect(
-    () => () => {
-      if (previewUrl) URL.revokeObjectURL(previewUrl)
-      if (downloadUrl) URL.revokeObjectURL(downloadUrl)
-    },
-    [previewUrl, downloadUrl],
-  )
+  const previewUrl = isPdf ? undefined : state.fileUrl
 
   async function run(files: File[], settings: ImageSettings) {
     if (files.length === 0) return
+    // The address of the file being replaced, freed once the new one is shown.
+    const previousUrl = state.fileUrl
     onChange((current) => ({ ...current, files, settings, busy: true, error: undefined }))
     try {
       const prepared = isPdf ? await preparePdf(upload, files) : await prepareImage(upload, files[0], settings)
-      onChange((current) => ({ ...current, busy: false, prepared }))
+      const fileUrl = URL.createObjectURL(prepared.blob)
+      onChange((current) => ({ ...current, busy: false, prepared, fileUrl }))
     } catch (error) {
       onChange((current) => ({
         ...current,
         busy: false,
         prepared: undefined,
+        fileUrl: undefined,
         error: error instanceof Error ? error.message : 'This file could not be prepared.',
       }))
     }
+    if (previousUrl) URL.revokeObjectURL(previousUrl)
   }
 
   function choose(event: ChangeEvent<HTMLInputElement>) {
@@ -156,17 +154,50 @@ export default function UploadCard({ upload, state, onChange }: UploadCardProps)
             <p className="upload-verdict">
               {state.prepared.status === 'ready' ? 'Ready to upload' : 'Check before uploading'}
             </p>
-            <ul className="upload-messages">
-              {state.prepared.messages.map((message) => (
-                <li key={message.text} className={`message-${message.tone}`}>
-                  {message.text}
-                </li>
-              ))}
-            </ul>
-            <a className="button" href={downloadUrl} download={state.prepared.name}>
+            {state.prepared.messages.length > 0 && (
+              <ul className="upload-messages">
+                {state.prepared.messages.map((message) => (
+                  <li key={message.text} className={`message-${message.tone}`}>
+                    {message.text}
+                  </li>
+                ))}
+              </ul>
+            )}
+            <a className="button" href={state.fileUrl} download={state.prepared.name}>
               Download {state.prepared.name}
             </a>
           </div>
+        </div>
+      )}
+
+      {state.prepared && !state.busy && (
+        <div className="report">
+          <table>
+            <caption>Checked in the finished file</caption>
+            <thead>
+              <tr>
+                <th scope="col">Rule</th>
+                <th scope="col">Exam asks</th>
+                <th scope="col">This file</th>
+              </tr>
+            </thead>
+            <tbody>
+              {state.prepared.checks.map((check) => (
+                <tr key={check.label} className={`report-${check.result}`}>
+                  <th scope="row">
+                    <span className="report-mark" aria-hidden="true">
+                      {RESULT_TEXT[check.result].mark}
+                    </span>
+                    {check.label}
+                    <span className="visually-hidden">: {RESULT_TEXT[check.result].word}</span>
+                  </th>
+                  <td>{check.rule}</td>
+                  <td>{check.found}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          <p className="report-note">{sizeRuleNote(upload)}</p>
         </div>
       )}
     </article>

@@ -1,8 +1,9 @@
 import { outputSizeFor } from '../presets/output-size'
 import type { Upload } from '../presets'
-import { toKB } from '../workers/kilobytes'
+import { minBytesFor } from '../workers/kilobytes'
 import { getProcessor, type AutoCropProblem, type SignatureProblem } from '../workers/client'
 import { downloadName } from './steps'
+import { checkImage, checkPdf, type Check } from './validate'
 
 // Runs one upload through the right tools for its kind and the exam's
 // rules, and explains the result in plain language.
@@ -19,9 +20,11 @@ export interface Prepared {
   width?: number
   height?: number
   pages?: number
-  // "ready": meets the exam's size rules. "needs-attention": it does not,
-  // or something in the photo should be checked; see `messages`.
+  // "ready": every check passed and nothing needs a look.
+  // "needs-attention": a check failed, or see `messages`.
   status: 'ready' | 'needs-attention'
+  // The exam's rules checked against the finished file.
+  checks: Check[]
   messages: Message[]
 }
 
@@ -61,25 +64,14 @@ const INK_PROBLEMS: Record<SignatureProblem, Message> = {
   },
 }
 
-function sizeMessages(upload: Upload, bytes: number, fits: boolean, padded: number): Message[] {
-  const { minKB, maxKB } = upload.size
-  const allowed = minKB ? `the ${minKB} to ${maxKB} KB allowed` : `the ${maxKB} KB limit`
-  const messages: Message[] = []
-  if (fits) {
-    messages.push({ tone: 'info', text: `${toKB(bytes)} KB, ${minKB ? 'within' : 'under'} ${allowed}.` })
-  } else {
-    messages.push({
-      tone: 'error',
-      text: `${toKB(bytes)} KB, which does not meet ${allowed}. Try a different photo or fewer pages.`,
-    })
-  }
-  if (padded > 0) {
-    messages.push({
-      tone: 'info',
-      text: `The picture alone is only ${toKB(bytes - padded)} KB, under the ${minKB} KB minimum, so blank data was added inside the file to reach it. The picture is unchanged.`,
-    })
-  }
-  return messages
+const SIZE_HINT: Message = {
+  tone: 'error',
+  text: 'This file does not meet the size limit. Try a different photo, or for a PDF, fewer or smaller pages.',
+}
+
+function statusOf(checks: Check[], messages: Message[]): Prepared['status'] {
+  const passed = checks.every((check) => check.result !== 'fail')
+  return passed && messages.every((message) => message.tone === 'info') ? 'ready' : 'needs-attention'
 }
 
 export async function prepareImage(upload: Upload, file: Blob, settings: ImageSettings): Promise<Prepared> {
@@ -124,16 +116,24 @@ export async function prepareImage(upload: Upload, file: Blob, settings: ImageSe
     dpi: size?.dpi,
     allowShrink,
   })
-  messages.unshift(...sizeMessages(upload, fitted.bytes, fitted.status === 'fits', fitted.paddedBytes))
+  if (fitted.status !== 'fits') messages.unshift(SIZE_HINT)
   if (size && size.basis !== 'portal-pixels') messages.push({ tone: 'info', text: size.note })
 
+  const name = downloadName(upload)
+  const checks = checkImage(upload, {
+    bytes: new Uint8Array(await fitted.blob.arrayBuffer()),
+    name,
+    size,
+    paddedBytes: fitted.paddedBytes,
+  })
   return {
     blob: fitted.blob,
-    name: downloadName(upload),
+    name,
     bytes: fitted.bytes,
     width: fitted.width,
     height: fitted.height,
-    status: fitted.status === 'fits' && messages.every((message) => message.tone === 'info') ? 'ready' : 'needs-attention',
+    status: statusOf(checks, messages),
+    checks,
     messages,
   }
 }
@@ -165,9 +165,8 @@ export async function preparePdf(upload: Upload, files: File[]): Promise<Prepare
       text: `Compressed with images at ${result.dpi} dpi to fit the limit.`,
     })
   }
-  const fits = result.status !== 'too-big'
-  const belowMin = upload.size.minKB !== undefined && result.bytes < upload.size.minKB * 1024
-  messages.unshift(...sizeMessages(upload, result.bytes, fits && !belowMin, 0))
+  if (result.status === 'too-big') messages.unshift(SIZE_HINT)
+  const belowMin = upload.size.minKB !== undefined && result.bytes < minBytesFor(upload.size.minKB)
   if (belowMin) {
     messages.push({
       tone: 'warning',
@@ -175,12 +174,23 @@ export async function preparePdf(upload: Upload, files: File[]): Promise<Prepare
     })
   }
 
+  // Read the finished PDF again, so the report describes the real file.
+  const name = downloadName(upload)
+  const { pageSizes } = await processor.inspectPdf(result.blob, name)
+  const checks = checkPdf(upload, { bytes: new Uint8Array(await result.blob.arrayBuffer()), name, pageSizes })
+  if (checks.some((check) => check.label === 'Page size' && check.result === 'fail')) {
+    messages.push({
+      tone: 'warning',
+      text: `The exam asks for ${upload.pageSize} pages. Scan the odd page again at ${upload.pageSize} size, or print it to an ${upload.pageSize} PDF, and choose the files again.`,
+    })
+  }
   return {
     blob: result.blob,
-    name: downloadName(upload),
+    name,
     bytes: result.bytes,
     pages,
-    status: fits && !belowMin ? 'ready' : 'needs-attention',
+    status: statusOf(checks, messages),
+    checks,
     messages,
   }
 }

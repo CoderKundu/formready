@@ -1,4 +1,4 @@
-import { PDFDocument } from 'pdf-lib'
+import { degrees, PDFDocument } from 'pdf-lib'
 import { describe, expect, it } from 'vitest'
 import { inspectPdf, mergePdfPages } from './pdf'
 
@@ -18,7 +18,20 @@ async function pageWidths(blob: Blob): Promise<number[]> {
 
 describe('inspectPdf', () => {
   it('counts pages', async () => {
-    expect(await inspectPdf(await makePdf([100, 200, 300]))).toEqual({ pageCount: 3 })
+    const info = await inspectPdf(await makePdf([100, 200, 300]))
+    expect(info.pageCount).toBe(3)
+    expect(info.pageSizes).toEqual([
+      { width: 100, height: 800 },
+      { width: 200, height: 800 },
+      { width: 300, height: 800 },
+    ])
+  })
+
+  it('reports a rotated page as it is shown', async () => {
+    const doc = await PDFDocument.create()
+    doc.addPage([595, 842]).setRotation(degrees(90))
+    const blob = new Blob([(await doc.save()) as Uint8Array<ArrayBuffer>], { type: 'application/pdf' })
+    expect((await inspectPdf(blob)).pageSizes).toEqual([{ width: 842, height: 595 }])
   })
 
   it('rejects a file that is not a PDF with a readable message', async () => {

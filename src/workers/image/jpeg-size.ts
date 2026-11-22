@@ -170,3 +170,31 @@ export function readJpegDpi(jpeg: Uint8Array): number | undefined {
   if (units === 2) return Math.round(x * 2.54) // dots per cm
   return undefined
 }
+
+// Pixel size from a JPEG's frame header (SOF), read from the file itself
+// rather than from what the encoder was asked for. Undefined if the file
+// has no frame header.
+export function readJpegSize(jpeg: Uint8Array): { width: number; height: number } | undefined {
+  if (jpeg[0] !== 0xff || jpeg[1] !== 0xd8) return undefined
+  let at = 2
+  while (at + 4 <= jpeg.length) {
+    if (jpeg[at] !== 0xff) return undefined
+    const marker = jpeg[at + 1]
+    if (marker === 0xff) {
+      at += 1 // fill byte
+      continue
+    }
+    if (marker === 0xd9 || marker === 0xda) return undefined // end, or image data before any frame
+    const length = (jpeg[at + 2] << 8) | jpeg[at + 3]
+    // SOF0 to SOF15, except DHT (C4), JPG (C8) and DAC (CC).
+    const isFrame = marker >= 0xc0 && marker <= 0xcf && marker !== 0xc4 && marker !== 0xc8 && marker !== 0xcc
+    if (isFrame && at + 9 <= jpeg.length) {
+      return {
+        height: (jpeg[at + 5] << 8) | jpeg[at + 6],
+        width: (jpeg[at + 7] << 8) | jpeg[at + 8],
+      }
+    }
+    at += 2 + length
+  }
+  return undefined
+}

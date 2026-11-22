@@ -7,6 +7,9 @@ export interface UploadState {
   settings: ImageSettings
   busy: boolean
   prepared?: Prepared
+  // blob: address of the prepared file, for the preview and the download.
+  // Made when the file is prepared and freed when it is replaced.
+  fileUrl?: string
   error?: string
 }
 
