@@ -91,6 +91,27 @@ describe('labelInk and signatureComponents', () => {
   })
 })
 
+describe('punctuation and dust', () => {
+  // A large page so small marks are below the stroke size.
+  const PW = 1000
+  const PH = 600
+  it('keeps a full stop next to writing and drops the same mark far away', () => {
+    const gray = new Uint8Array(PW * PH).fill(235)
+    const put = (x0: number, y0: number, w: number, h: number) => {
+      for (let y = y0; y < y0 + h; y++) for (let x = x0; x < x0 + w; x++) gray[y * PW + x] = 30
+    }
+    put(200, 300, 300, 4) // a stroke of writing
+    put(510, 298, 3, 3) // full stop just after it
+    put(850, 80, 3, 3) // same-sized dust far away
+    put(700, 500, 1, 1) // a single-pixel speck
+    const strength = inkStrength(gray, PW, PH)
+    const { components } = labelInk(strength, PW, PH)
+    const keep = signatureComponents(components, PW, PH)
+    const kept = components.filter((_, i) => keep[i]).map((c) => c.bounds.x).sort((a, b) => a - b)
+    expect(kept).toEqual([200, 510])
+  })
+})
+
 describe('keepInk and inkBounds', () => {
   const gray = scene(W, H, (set) => {
     stroke(set, 50, 150, 40, 30)

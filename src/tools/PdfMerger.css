@@ -13,46 +13,10 @@
   gap: 8px;
 }
 
-.button {
-  display: inline-flex;
-  align-items: center;
-  min-height: 44px;
-  padding: 0 18px;
-  border: 1px solid var(--accent);
-  border-radius: 10px;
-  font: inherit;
-  font-weight: 600;
-  color: var(--surface);
-  background: var(--accent);
-  text-decoration: none;
-  cursor: pointer;
-}
-
-.button:focus-visible,
 .page-card:focus-visible,
 .page-remove:focus-visible {
   outline: 3px solid var(--accent);
   outline-offset: 2px;
-}
-
-.button:disabled,
-.button[aria-disabled='true'] {
-  opacity: 0.55;
-  cursor: not-allowed;
-}
-
-.button-quiet {
-  color: var(--accent);
-  background: transparent;
-}
-
-.visually-hidden {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  overflow: hidden;
-  clip: rect(0 0 0 0);
-  white-space: nowrap;
 }
 
 .merger-status:empty {

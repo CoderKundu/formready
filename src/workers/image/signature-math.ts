@@ -221,16 +221,33 @@ export function paperBounds(gray: Uint8Array, width: number, height: number): Re
 // dust), large dark areas touching the photo's edge (the table or a shadow
 // beside the paper), and, when the paper's position is known, anything not
 // well inside the paper (the band along its edge).
+//
+// Dust and punctuation are the same size, so small marks are told apart by
+// where they are: a comma, full stop or i-dot sits next to writing, while
+// dust can be anywhere. Tiny specks are always dropped; small marks are kept
+// only near a larger stroke.
 export function signatureComponents(
   components: InkComponent[],
   width: number,
   height: number,
   paper?: Rect,
 ): boolean[] {
-  const minArea = Math.max(12, Math.round(width * height * 0.00002))
+  const tinyArea = Math.max(4, Math.round(width * height * 0.000002))
+  const strokeArea = Math.max(12, Math.round(width * height * 0.00002))
+  const nearby = Math.max(6, Math.round(Math.max(width, height) * 0.02))
   const inset = Math.max(4, Math.round(Math.min(width, height) * 0.01))
+  const strokes = components.filter(({ area }) => area >= strokeArea)
+  const nearStroke = (bounds: Rect) =>
+    strokes.some(
+      (stroke) =>
+        bounds.x + bounds.width >= stroke.bounds.x - nearby &&
+        bounds.x <= stroke.bounds.x + stroke.bounds.width + nearby &&
+        bounds.y + bounds.height >= stroke.bounds.y - nearby &&
+        bounds.y <= stroke.bounds.y + stroke.bounds.height + nearby,
+    )
   return components.map(({ area, bounds }) => {
-    if (area < minArea) return false
+    if (area < tinyArea) return false
+    if (area < strokeArea && !nearStroke(bounds)) return false
     if (
       paper &&
       (bounds.x < paper.x + inset ||
