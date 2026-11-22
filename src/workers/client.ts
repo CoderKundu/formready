@@ -2,7 +2,15 @@ import { releaseProxy, transfer, wrap, type Remote } from 'comlink'
 import type { ProcessingApi } from './processing-api'
 
 export { transfer }
-export type { BlobInfo, Capabilities, PageRef, PdfInfo, ProcessingApi } from './processing-api'
+export type {
+  BlobInfo,
+  Capabilities,
+  CompressOptions,
+  PageRef,
+  PdfInfo,
+  ProcessingApi,
+} from './processing-api'
+export { COMPRESSION_LEVELS, type CompressionLevelId } from './compression-levels'
 
 // Every call on the returned object is async and runs in the worker:
 //

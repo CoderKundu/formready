@@ -58,8 +58,8 @@ function App() {
       </section>
 
       <p className="status">
-        In development. Merging PDFs works now; the photo, signature and compression tools are
-        coming.
+        In development. Merging and compressing PDFs works now; the photo and signature tools
+        are coming.
       </p>
 
       <Suspense fallback={<p role="status">Loading the PDF tool…</p>}>

@@ -19,6 +19,7 @@ import { CSS } from '@dnd-kit/utilities'
 import { useEffect, useId, useRef, useState, type ChangeEvent } from 'react'
 import { closePdf, openPdf, renderPage, type PDFDocumentProxy } from '../pdf/pdfjs'
 import { getProcessor } from '../workers/client'
+import CompressPanel from './CompressPanel'
 import './PdfMerger.css'
 
 interface SourceFile {
@@ -35,6 +36,7 @@ interface PageItem {
 }
 
 interface MergeResult {
+  blob: Blob
   url: string
   kilobytes: number
   pageCount: number
@@ -143,7 +145,7 @@ export default function PdfMerger() {
         used.map((file) => file.name),
       )
       const { kilobytes } = await processor.describeBlob(merged)
-      setResult({ url: URL.createObjectURL(merged), kilobytes, pageCount: pages.length })
+      setResult({ blob: merged, url: URL.createObjectURL(merged), kilobytes, pageCount: pages.length })
     } catch (error) {
       setErrors([error instanceof Error ? error.message : 'The PDFs could not be merged.'])
     } finally {
@@ -156,10 +158,11 @@ export default function PdfMerger() {
 
   return (
     <section className="merger" aria-labelledby="merger-heading">
-      <h2 id="merger-heading">Merge PDFs</h2>
+      <h2 id="merger-heading">Merge and compress PDFs</h2>
       <p className="merger-intro">
         Add your marksheets and certificates, drag the pages into order, remove the ones you
-        don’t need, then merge them into one PDF. Files stay on your device.
+        don’t need, and merge them into one PDF. Then shrink it if it is over the portal’s
+        limit. Files stay on your device.
       </p>
 
       <div className="merger-actions">
@@ -226,7 +229,7 @@ export default function PdfMerger() {
 
           <div className="merger-actions">
             <button type="button" className="button" onClick={merge} disabled={busy !== null}>
-              Merge {pages.length} {pages.length === 1 ? 'page' : 'pages'}
+              {pages.length === 1 ? 'Make PDF from 1 page' : `Merge ${pages.length} pages`}
             </button>
           </div>
         </>
@@ -243,6 +246,8 @@ export default function PdfMerger() {
           </a>
         </div>
       )}
+
+      {result && <CompressPanel key={result.url} source={result.blob} sourceKilobytes={result.kilobytes} />}
     </section>
   )
 }

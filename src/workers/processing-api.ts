@@ -11,9 +11,32 @@
 // - Large buffers should be passed with `transfer()` from ./client to avoid
 //   copying them.
 
+import ghostscriptWasmUrl from '@okathira/ghostpdl-wasm/gs.wasm?url'
+import { createCompressor } from './ghostscript'
 import { inspectPdf, mergePdfPages } from './pdf'
 
+export type { CompressOptions } from './ghostscript'
 export type { PageRef, PdfInfo } from './pdf'
+
+const compressor = createCompressor(async () => {
+  let response: Response
+  try {
+    response = await fetch(ghostscriptWasmUrl)
+  } catch (error) {
+    throw new Error('The compressor could not be downloaded. Check your connection and try again.', {
+      cause: error,
+    })
+  }
+  if (!response.ok) {
+    throw new Error(`The compressor could not be downloaded (HTTP ${response.status}). Try again later.`)
+  }
+  try {
+    // Compiles while downloading, but needs the server to send application/wasm.
+    return await WebAssembly.compileStreaming(response.clone())
+  } catch {
+    return WebAssembly.compile(await response.arrayBuffer())
+  }
+})
 
 export interface Capabilities {
   // Needed to decode and resize images inside the worker.
@@ -55,6 +78,15 @@ export const processingApi = {
 
   // One PDF from pages of several PDFs, in the given order.
   mergePdfPages,
+
+  // Downloads and compiles Ghostscript (about 15 MB) if it is not loaded
+  // yet. Call it first so the UI can say it is downloading.
+  loadCompressor: compressor.load,
+
+  // Shrinks a PDF by resampling its images with Ghostscript. Loads
+  // Ghostscript first if needed. The result can be larger than the input
+  // for files that are already compact; the caller decides which to keep.
+  compressPdf: compressor.compress,
 }
 
 export type ProcessingApi = typeof processingApi
