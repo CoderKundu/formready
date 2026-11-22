@@ -8,9 +8,13 @@ export type {
   BlobInfo,
   Capabilities,
   CompressOptions,
+  ImageInfo,
   PageRef,
   PdfInfo,
   ProcessingApi,
+  Rect,
+  ResizedImage,
+  ResizeOptions,
   SizeTargetOptions,
   SizeTargetResult,
 } from './processing-api'

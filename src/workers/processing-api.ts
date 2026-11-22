@@ -13,10 +13,12 @@
 
 import ghostscriptWasmUrl from '@okathira/ghostpdl-wasm/gs.wasm?url'
 import { createCompressor } from './ghostscript'
+import { inspectImage, resizeImage } from './image/resize'
 import { inspectPdf, mergePdfPages } from './pdf'
 import { compressToSize, type Attempt, type SizeTargetOptions } from './target-size'
 
 export type { CompressOptions } from './ghostscript'
+export type { ImageInfo, Rect, ResizedImage, ResizeOptions } from './image/resize'
 export type { PageRef, PdfInfo } from './pdf'
 export type { Attempt, SizeTargetOptions, SizeTargetResult } from './target-size'
 
@@ -101,6 +103,14 @@ export const processingApi = {
   ) {
     return compressToSize(compressor.compress, input, options, onAttempt)
   },
+
+  // Upright size and EXIF orientation of a photo. Rejects HEIC and files
+  // that are not images with a message that can be shown to the user.
+  inspectImage,
+
+  // Turns a photo upright (using its EXIF orientation), optionally crops it,
+  // and scales it to an exact pixel size as JPEG or PNG.
+  resizeImage,
 }
 
 export type ProcessingApi = typeof processingApi
