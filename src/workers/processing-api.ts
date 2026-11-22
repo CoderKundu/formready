@@ -11,6 +11,10 @@
 // - Large buffers should be passed with `transfer()` from ./client to avoid
 //   copying them.
 
+import { inspectPdf, mergePdfPages } from './pdf'
+
+export type { PageRef, PdfInfo } from './pdf'
+
 export interface Capabilities {
   // Needed to decode and resize images inside the worker.
   offscreenCanvas: boolean
@@ -44,6 +48,13 @@ export const processingApi = {
       type: blob.type,
     }
   },
+
+  // Page count of a PDF. Rejects encrypted or unreadable files with a
+  // message that can be shown to the user.
+  inspectPdf,
+
+  // One PDF from pages of several PDFs, in the given order.
+  mergePdfPages,
 }
 
 export type ProcessingApi = typeof processingApi

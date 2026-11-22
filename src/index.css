@@ -6,6 +6,8 @@
   --border: #dcdee6;
   --accent: #4f5fb0;
   --accent-soft: #e8ebf8;
+  --error-text: #8a1c1c;
+  --error-bg: #fbe9e9;
 
   --sans: system-ui, 'Segoe UI', Roboto, sans-serif;
 
@@ -26,6 +28,8 @@
     --border: #2f323d;
     --accent: #9aa8ee;
     --accent-soft: #262a3f;
+    --error-text: #ffb4b4;
+    --error-bg: #3a1d1f;
   }
 }
 

@@ -1,4 +1,9 @@
+import { lazy, Suspense } from 'react'
 import { presets } from './presets'
+
+// Loaded on demand: PDF.js and the drag-and-drop code are large, and most
+// visitors will not open every tool.
+const PdfMerger = lazy(() => import('./tools/PdfMerger'))
 
 const steps = [
   {
@@ -52,9 +57,14 @@ function App() {
         </ol>
       </section>
 
-      <p className="status" role="status">
-        In development. The tools are not available yet.
+      <p className="status">
+        In development. Merging PDFs works now; the photo, signature and compression tools are
+        coming.
       </p>
+
+      <Suspense fallback={<p role="status">Loading the PDF tool…</p>}>
+        <PdfMerger />
+      </Suspense>
 
       <footer className="footer">Free software under the AGPL-3.0 licence.</footer>
     </main>
