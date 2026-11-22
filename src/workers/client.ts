@@ -5,6 +5,11 @@ import type { ProcessingApi } from './processing-api'
 export { proxy, transfer }
 export type {
   Attempt,
+  AutoCropOptions,
+  AutoCropProblem,
+  AutoCropResult,
+  Face,
+  FaceDetection,
   BlobInfo,
   Capabilities,
   CompressOptions,

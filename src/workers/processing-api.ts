@@ -13,11 +13,16 @@
 
 import ghostscriptWasmUrl from '@okathira/ghostpdl-wasm/gs.wasm?url'
 import { createCompressor } from './ghostscript'
+import { autoCropPortrait } from './image/auto-crop'
+import { detectFaces } from './image/face'
 import { inspectImage, resizeImage } from './image/resize'
 import { inspectPdf, mergePdfPages } from './pdf'
 import { compressToSize, type Attempt, type SizeTargetOptions } from './target-size'
 
 export type { CompressOptions } from './ghostscript'
+export type { AutoCropOptions, AutoCropProblem, AutoCropResult } from './image/auto-crop'
+export type { FaceDetection } from './image/face'
+export type { Face } from './image/portrait'
 export type { ImageInfo, Rect, ResizedImage, ResizeOptions } from './image/resize'
 export type { PageRef, PdfInfo } from './pdf'
 export type { Attempt, SizeTargetOptions, SizeTargetResult } from './target-size'
@@ -111,6 +116,15 @@ export const processingApi = {
   // Turns a photo upright (using its EXIF orientation), optionally crops it,
   // and scales it to an exact pixel size as JPEG or PNG.
   resizeImage,
+
+  // Faces in a photo, most confident first. Loads MediaPipe (about 2.8 MB
+  // compressed) on first use.
+  detectFaces,
+
+  // Finds the face and crops a passport-style photo around it, with the
+  // head filling `headCoverage` of the height. Falls back to a centre crop
+  // when there is no face, and lists anything the user should check.
+  autoCropPortrait,
 }
 
 export type ProcessingApi = typeof processingApi
