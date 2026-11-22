@@ -207,3 +207,85 @@
 .compress-note {
   font-size: 0.9rem;
 }
+
+.compress-target {
+  display: grid;
+  gap: 8px;
+}
+
+.compress-label {
+  font-weight: 600;
+  color: var(--text-strong);
+}
+
+.compress-limit-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.compress-limit {
+  width: 7.5em;
+  min-height: 44px;
+  padding: 0 10px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  font: inherit;
+  color: var(--text-strong);
+  background: var(--surface);
+}
+
+.compress-limit:focus-visible,
+.chip:focus-visible,
+.compress-manual summary:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.compress-quick {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.chip {
+  min-height: 36px;
+  padding: 0 12px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  font: inherit;
+  font-size: 0.9rem;
+  color: var(--text);
+  background: transparent;
+  cursor: pointer;
+}
+
+.chip[aria-pressed='true'] {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: var(--accent-soft);
+  font-weight: 600;
+}
+
+.compress-manual {
+  display: grid;
+  gap: 8px;
+}
+
+.compress-manual[open] {
+  padding-bottom: 4px;
+}
+
+.compress-manual summary {
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  font-weight: 600;
+  color: var(--accent);
+}
+
+.compress-manual .button {
+  justify-self: start;
+}

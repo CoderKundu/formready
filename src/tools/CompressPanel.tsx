@@ -1,25 +1,31 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useId, useRef, useState, type FormEvent } from 'react'
 import {
   COMPRESSION_LEVELS,
   getProcessor,
+  proxy,
   terminateProcessor,
+  type Attempt,
   type CompressionLevelId,
 } from '../workers/client'
 
-// Download size of the Ghostscript WASM as served (gzip). Shown before the
-// first compression so people on mobile data can decide.
+// Download size of the Ghostscript WASM as served (Brotli, measured on the
+// live site). Shown before the first compression so people on mobile data
+// can decide.
 const COMPRESSOR_DOWNLOAD_MB = 11
+
+// Common portal limits for document PDFs, in KB.
+const QUICK_LIMITS = [100, 200, 300, 500]
 
 // Whether Ghostscript is already loaded in the worker this session.
 let compressorReady = false
 
-interface Compressed {
-  url: string
-  kilobytes: number
-  levelLabel: string
-  grayscale: boolean
-  smaller: boolean
-}
+const toKB = (bytes: number) => Math.round((bytes / 1024) * 10) / 10
+
+type Outcome =
+  | { kind: 'already-fits'; maxKB: number }
+  | { kind: 'fits'; url: string; kilobytes: number; dpi: number; maxKB: number; attempts: Attempt[] }
+  | { kind: 'too-big'; kilobytes: number; dpi: number; maxKB: number }
+  | { kind: 'quality'; url: string; kilobytes: number; label: string; smaller: boolean }
 
 interface CompressPanelProps {
   source: Blob
@@ -27,43 +33,104 @@ interface CompressPanelProps {
 }
 
 export default function CompressPanel({ source, sourceKilobytes }: CompressPanelProps) {
+  const [maxKB, setMaxKB] = useState('200')
   const [level, setLevel] = useState<CompressionLevelId>('balanced')
   const [grayscale, setGrayscale] = useState(false)
   const [busy, setBusy] = useState<'downloading' | 'compressing' | null>(null)
+  const [trying, setTrying] = useState<Attempt[]>([])
   const [error, setError] = useState<string | null>(null)
-  const [result, setResult] = useState<Compressed | null>(null)
+  const [outcome, setOutcome] = useState<Outcome | null>(null)
   // Ignores the outcome of a run the user cancelled.
   const run = useRef(0)
+  const limitId = useId()
 
-  useEffect(() => () => { if (result) URL.revokeObjectURL(result.url) }, [result])
+  useEffect(
+    () => () => {
+      if (outcome && 'url' in outcome) URL.revokeObjectURL(outcome.url)
+    },
+    [outcome],
+  )
 
-  async function compress() {
+  // Shared setup for both ways of compressing. Returns false if cancelled.
+  async function start(id: number): Promise<boolean> {
+    setError(null)
+    setOutcome(null)
+    setTrying([])
+    if (!compressorReady) {
+      setBusy('downloading')
+      await getProcessor().loadCompressor()
+      compressorReady = true
+    }
+    if (id !== run.current) return false
+    setBusy('compressing')
+    return true
+  }
+
+  async function fitToLimit(event: FormEvent) {
+    event.preventDefault()
+    const limit = Number(maxKB)
+    if (!Number.isFinite(limit) || limit <= 0) {
+      setError('Enter the portal’s size limit in KB, for example 200.')
+      return
+    }
+    const id = ++run.current
+    try {
+      // A file that already fits needs no compressor download.
+      if (source.size <= limit * 1024 && !grayscale) {
+        setError(null)
+        setOutcome({ kind: 'already-fits', maxKB: limit })
+        return
+      }
+      if (!(await start(id))) return
+      const result = await getProcessor().compressPdfToSize(
+        source,
+        { maxKB: limit, grayscale },
+        proxy((attempt: Attempt) => {
+          if (id === run.current) setTrying((current) => [...current, attempt])
+        }),
+      )
+      if (id !== run.current) return
+      if (result.status === 'fits') {
+        setOutcome({
+          kind: 'fits',
+          url: URL.createObjectURL(result.blob),
+          kilobytes: toKB(result.bytes),
+          dpi: result.dpi!,
+          maxKB: limit,
+          attempts: result.attempts,
+        })
+      } else if (result.status === 'too-big') {
+        setOutcome({ kind: 'too-big', kilobytes: toKB(result.bytes), dpi: result.dpi!, maxKB: limit })
+      } else {
+        setOutcome({ kind: 'already-fits', maxKB: limit })
+      }
+    } catch (caught) {
+      if (id === run.current) {
+        setError(caught instanceof Error ? caught.message : 'The PDF could not be compressed.')
+      }
+    } finally {
+      if (id === run.current) setBusy(null)
+    }
+  }
+
+  async function compressAtQuality() {
     const id = ++run.current
     const choice = COMPRESSION_LEVELS.find((option) => option.id === level)!
-    setError(null)
-    setResult(null)
     try {
-      const processor = getProcessor()
-      if (!compressorReady) {
-        setBusy('downloading')
-        await processor.loadCompressor()
-        compressorReady = true
-      }
+      if (!(await start(id))) return
+      const output = await getProcessor().compressPdf(source, { dpi: choice.dpi, grayscale })
       if (id !== run.current) return
-      setBusy('compressing')
-      const output = await processor.compressPdf(source, { dpi: choice.dpi, grayscale })
-      const { kilobytes } = await processor.describeBlob(output)
-      if (id !== run.current) return
-      setResult({
+      setOutcome({
+        kind: 'quality',
         url: URL.createObjectURL(output),
-        kilobytes,
-        levelLabel: choice.label,
-        grayscale,
+        kilobytes: toKB(output.size),
+        label: `${choice.label.toLowerCase()} (${choice.dpi} dpi)`,
         smaller: output.size < source.size,
       })
     } catch (caught) {
-      if (id !== run.current) return
-      setError(caught instanceof Error ? caught.message : 'The PDF could not be compressed.')
+      if (id === run.current) {
+        setError(caught instanceof Error ? caught.message : 'The PDF could not be compressed.')
+      }
     } finally {
       if (id === run.current) setBusy(null)
     }
@@ -72,13 +139,15 @@ export default function CompressPanel({ source, sourceKilobytes }: CompressPanel
   function cancel() {
     run.current++
     // Ghostscript cannot be interrupted mid-run, so stop the whole worker.
-    // The next compression downloads (or reuses the cached) compressor again.
+    // The next compression loads the compressor again (from the browser cache).
     terminateProcessor()
     compressorReady = false
     setBusy(null)
+    setTrying([])
   }
 
-  const saved = result ? Math.round((1 - result.kilobytes / sourceKilobytes) * 100) : 0
+  const disabled = busy !== null
+  const savedPercent = (kilobytes: number) => Math.round((1 - kilobytes / sourceKilobytes) * 100)
 
   return (
     <div className="compress">
@@ -87,55 +156,102 @@ export default function CompressPanel({ source, sourceKilobytes }: CompressPanel
         Lowers the resolution of scanned pages and photos inside the PDF. Text stays sharp.
       </p>
 
-      <fieldset className="compress-levels" disabled={busy !== null}>
-        <legend>Image quality</legend>
-        {COMPRESSION_LEVELS.map((option) => (
-          <label key={option.id} className="compress-level">
-            <input
-              type="radio"
-              name="compression-level"
-              value={option.id}
-              checked={level === option.id}
-              onChange={() => setLevel(option.id)}
-            />
-            <span>
-              {option.label} <span className="compress-dpi">({option.dpi} dpi)</span>
-            </span>
-          </label>
-        ))}
-      </fieldset>
+      <form className="compress-target" onSubmit={fitToLimit}>
+        <label htmlFor={limitId} className="compress-label">
+          Portal’s size limit
+        </label>
+        <div className="compress-limit-row">
+          <input
+            id={limitId}
+            className="compress-limit"
+            type="number"
+            inputMode="decimal"
+            min="1"
+            step="any"
+            value={maxKB}
+            onChange={(event) => setMaxKB(event.target.value)}
+            disabled={disabled}
+            aria-describedby={`${limitId}-hint`}
+          />
+          <span>KB</span>
+          <button type="submit" className="button" disabled={disabled}>
+            Fit under {maxKB || '…'} KB
+          </button>
+        </div>
+        <div className="compress-quick" role="group" aria-label="Common limits">
+          {QUICK_LIMITS.map((limit) => (
+            <button
+              key={limit}
+              type="button"
+              className="chip"
+              aria-pressed={maxKB === String(limit)}
+              onClick={() => setMaxKB(String(limit))}
+              disabled={disabled}
+            >
+              {limit} KB
+            </button>
+          ))}
+        </div>
+        <p id={`${limitId}-hint`} className="compress-note">
+          Keeps the best quality that fits. Your PDF is {sourceKilobytes} KB.
+        </p>
+      </form>
 
       <label className="compress-gray">
         <input
           type="checkbox"
           checked={grayscale}
           onChange={(event) => setGrayscale(event.target.checked)}
-          disabled={busy !== null}
+          disabled={disabled}
         />
         Black and white (much smaller for scanned documents)
       </label>
 
-      {!compressorReady && busy === null && (
+      <details className="compress-manual">
+        <summary>Or choose the quality yourself</summary>
+        <fieldset className="compress-levels" disabled={disabled}>
+          <legend className="visually-hidden">Image quality</legend>
+          {COMPRESSION_LEVELS.map((option) => (
+            <label key={option.id} className="compress-level">
+              <input
+                type="radio"
+                name="compression-level"
+                value={option.id}
+                checked={level === option.id}
+                onChange={() => setLevel(option.id)}
+              />
+              <span>
+                {option.label} <span className="compress-dpi">({option.dpi} dpi)</span>
+              </span>
+            </label>
+          ))}
+        </fieldset>
+        <button type="button" className="button button-quiet" onClick={compressAtQuality} disabled={disabled}>
+          Compress at this quality
+        </button>
+      </details>
+
+      {!compressorReady && !disabled && (
         <p className="compress-note">
-          The first time, this downloads the compressor (about {COMPRESSOR_DOWNLOAD_MB} MB). It
+          The first compression downloads the compressor (about {COMPRESSOR_DOWNLOAD_MB} MB). It
           runs on your device; your PDF is not uploaded.
         </p>
       )}
 
-      <div className="merger-actions">
-        <button type="button" className="button" onClick={compress} disabled={busy !== null}>
-          Compress {sourceKilobytes} KB PDF
-        </button>
-        {busy !== null && (
+      {disabled && (
+        <div className="merger-actions">
           <button type="button" className="button button-quiet" onClick={cancel}>
             Cancel
           </button>
-        )}
-      </div>
+        </div>
+      )}
 
       <p className="merger-status" role="status">
         {busy === 'downloading' && `Downloading the compressor (about ${COMPRESSOR_DOWNLOAD_MB} MB)…`}
-        {busy === 'compressing' && 'Compressing… this can take a while on a phone.'}
+        {busy === 'compressing' &&
+          (trying.length === 0
+            ? 'Compressing… this can take a while on a phone.'
+            : `Compressing… tried ${trying.map((attempt) => `${attempt.dpi} dpi (${toKB(attempt.bytes)} KB)`).join(', ')}.`)}
       </p>
 
       {error && (
@@ -144,27 +260,59 @@ export default function CompressPanel({ source, sourceKilobytes }: CompressPanel
         </p>
       )}
 
-      {result && (
+      {outcome && (
         <div className="merger-result">
-          {result.smaller ? (
+          {outcome.kind === 'already-fits' && (
             <p>
-              {sourceKilobytes} KB → <strong>{result.kilobytes} KB</strong> ({saved}% smaller),{' '}
-              {result.levelLabel.toLowerCase()}
-              {result.grayscale ? ', black and white' : ''}.
-            </p>
-          ) : (
-            <p>
-              This setting did not make the file smaller ({result.kilobytes} KB). Keep the merged
-              PDF, or try a lower quality or black and white.
+              Your PDF is already under {outcome.maxKB} KB ({sourceKilobytes} KB), so it was left
+              as it is. Use the merged PDF above.
             </p>
           )}
-          {result.smaller && (
-            <a className="button" href={result.url} download="compressed.pdf">
-              Download compressed.pdf
-            </a>
+          {outcome.kind === 'fits' && (
+            <>
+              <p>
+                {sourceKilobytes} KB → <strong>{outcome.kilobytes} KB</strong>, under{' '}
+                {outcome.maxKB} KB ({savedPercent(outcome.kilobytes)}% smaller). Images at{' '}
+                {outcome.dpi} dpi{grayscaleNote(grayscale)}, the best quality that fits.
+              </p>
+              <a className="button" href={outcome.url} download="compressed.pdf">
+                Download compressed.pdf
+              </a>
+            </>
           )}
+          {outcome.kind === 'too-big' && (
+            <p>
+              Could not get under {outcome.maxKB} KB. The smallest was {outcome.kilobytes} KB at{' '}
+              {outcome.dpi} dpi.{' '}
+              {grayscale
+                ? 'Try removing pages you don’t need.'
+                : 'Try black and white, or remove pages you don’t need.'}
+            </p>
+          )}
+          {outcome.kind === 'quality' &&
+            (outcome.smaller ? (
+              <>
+                <p>
+                  {sourceKilobytes} KB → <strong>{outcome.kilobytes} KB</strong> (
+                  {savedPercent(outcome.kilobytes)}% smaller), {outcome.label}
+                  {grayscaleNote(grayscale)}.
+                </p>
+                <a className="button" href={outcome.url} download="compressed.pdf">
+                  Download compressed.pdf
+                </a>
+              </>
+            ) : (
+              <p>
+                This setting did not make the file smaller ({outcome.kilobytes} KB). Keep the
+                merged PDF, or try a lower quality or black and white.
+              </p>
+            ))}
         </div>
       )}
     </div>
   )
+}
+
+function grayscaleNote(grayscale: boolean): string {
+  return grayscale ? ', black and white' : ''
 }

@@ -1,14 +1,18 @@
-import { releaseProxy, transfer, wrap, type Remote } from 'comlink'
+import { proxy, releaseProxy, transfer, wrap, type Remote } from 'comlink'
 import type { ProcessingApi } from './processing-api'
 
-export { transfer }
+// `proxy` wraps a callback so the worker can call it, e.g. for progress.
+export { proxy, transfer }
 export type {
+  Attempt,
   BlobInfo,
   Capabilities,
   CompressOptions,
   PageRef,
   PdfInfo,
   ProcessingApi,
+  SizeTargetOptions,
+  SizeTargetResult,
 } from './processing-api'
 export { COMPRESSION_LEVELS, type CompressionLevelId } from './compression-levels'
 

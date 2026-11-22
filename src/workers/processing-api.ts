@@ -14,9 +14,11 @@
 import ghostscriptWasmUrl from '@okathira/ghostpdl-wasm/gs.wasm?url'
 import { createCompressor } from './ghostscript'
 import { inspectPdf, mergePdfPages } from './pdf'
+import { compressToSize, type Attempt, type SizeTargetOptions } from './target-size'
 
 export type { CompressOptions } from './ghostscript'
 export type { PageRef, PdfInfo } from './pdf'
+export type { Attempt, SizeTargetOptions, SizeTargetResult } from './target-size'
 
 const compressor = createCompressor(async () => {
   let response: Response
@@ -87,6 +89,18 @@ export const processingApi = {
   // Ghostscript first if needed. The result can be larger than the input
   // for files that are already compact; the caller decides which to keep.
   compressPdf: compressor.compress,
+
+  // Compresses to the best image quality that fits under `maxKB`, trying
+  // at most four resolutions. Returns the input unchanged if it already
+  // fits. `onAttempt` (wrapped with `proxy()` from ./client) hears about
+  // each resolution tried, so the UI can show progress.
+  compressPdfToSize(
+    input: Blob,
+    options: SizeTargetOptions,
+    onAttempt?: (attempt: Attempt) => void,
+  ) {
+    return compressToSize(compressor.compress, input, options, onAttempt)
+  },
 }
 
 export type ProcessingApi = typeof processingApi
