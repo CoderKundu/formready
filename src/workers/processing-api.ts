@@ -15,6 +15,7 @@ import ghostscriptWasmUrl from '@okathira/ghostpdl-wasm/gs.wasm?url'
 import { createCompressor } from './ghostscript'
 import { autoCropPortrait } from './image/auto-crop'
 import { detectFaces } from './image/face'
+import { fitImageToSize } from './image/fit-size'
 import { inspectImage, resizeImage } from './image/resize'
 import { cleanSignature } from './image/signature'
 import { inspectPdf, mergePdfPages } from './pdf'
@@ -23,6 +24,7 @@ import { compressToSize, type Attempt, type SizeTargetOptions } from './target-s
 export type { CompressOptions } from './ghostscript'
 export type { AutoCropOptions, AutoCropProblem, AutoCropResult } from './image/auto-crop'
 export type { FaceDetection } from './image/face'
+export type { FitSizeOptions, FitSizeResult } from './image/fit-size'
 export type { Face } from './image/portrait'
 export type { ImageInfo, Rect, ResizedImage, ResizeOptions } from './image/resize'
 export type { SignatureOptions, SignatureProblem, SignatureResult } from './image/signature'
@@ -132,6 +134,12 @@ export const processingApi = {
   // paper texture, drops the background, crops to the ink and fits it to
   // the portal's size on white.
   cleanSignature,
+
+  // Re-encodes an image as a JPEG between minKB and maxKB at the best
+  // quality that fits, shrinking its pixel size only if allowed. Files that
+  // are too small are padded with blank JPEG comments, which do not change
+  // the picture.
+  fitImageToSize,
 }
 
 export type ProcessingApi = typeof processingApi

@@ -95,15 +95,18 @@ describe('compressToSize', () => {
   })
 
   it('compresses to the best quality under the limit', async () => {
-    // 150,000 bytes is about 146.5 KB; 120 dpi (144,000 bytes) is the best fit.
-    const result = await compressToSize(compress, input, { maxKB: 146.5 })
+    // 150 KB is read as 150,000 bytes; 120 dpi (144,000 bytes) is the best fit.
+    const result = await compressToSize(compress, input, { maxKB: 150 })
     expect(result).toMatchObject({ status: 'fits', dpi: 120, bytes: 144_000 })
   })
 
-  it('counts a KB as 1024 bytes', async () => {
-    // 72 dpi -> 51,840 bytes, just over 50 KB (51,200 bytes); 60 dpi -> 36,000 fits.
+  it('reads the limit as 1000-byte KB, so it passes either way a portal counts', async () => {
+    // 50 KB is read as 50,000 bytes. 72 dpi gives 51,840 bytes, over the
+    // limit; 60 dpi gives 36,000 bytes, which fits however the portal counts.
     const result = await compressToSize(compress, input, { maxKB: 50 })
     expect(result.dpi).toBe(60)
+    // 52 KB: 51,840 bytes fits 52 x 1000 = 52,000, so 72 dpi is chosen.
+    expect((await compressToSize(compress, input, { maxKB: 52 })).dpi).toBe(72)
   })
 
   it('returns the smallest result when nothing fits', async () => {

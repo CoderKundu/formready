@@ -159,11 +159,11 @@ describe('compressToSize with Ghostscript', () => {
       const input = await makeScannedPdf()
       const result = await compressToSize(compressor.compress, input, { maxKB: 100 })
       expect(result.status).toBe('fits')
-      expect(result.bytes).toBeLessThanOrEqual(100 * 1024)
+      expect(result.bytes).toBeLessThanOrEqual(100_000)
       expect(result.attempts.length).toBeLessThanOrEqual(4)
       // Every resolution above the chosen one that was tried came out too big.
       for (const attempt of result.attempts) {
-        if (attempt.dpi > result.dpi!) expect(attempt.bytes).toBeGreaterThan(100 * 1024)
+        if (attempt.dpi > result.dpi!) expect(attempt.bytes).toBeGreaterThan(100_000)
       }
       expect(await pageCount(result.blob)).toBe(1)
     },

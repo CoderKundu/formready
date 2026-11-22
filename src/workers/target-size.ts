@@ -1,3 +1,5 @@
+import { maxBytesFor } from './kilobytes'
+
 // Finds the highest image resolution whose output fits under a size limit.
 //
 // Output size falls as resolution falls, so this is a binary search over a
@@ -73,7 +75,8 @@ export async function searchHighestFitting<T>(
 }
 
 export interface SizeTargetOptions {
-  // The portal's limit, in KB of 1024 bytes.
+  // The portal's limit in KB. Read as 1000-byte KB so the file passes
+  // whichever way the portal counts (see ../kilobytes.ts).
   maxKB: number
   grayscale?: boolean
 }
@@ -101,7 +104,7 @@ export async function compressToSize(
   if (!Number.isFinite(maxKB) || maxKB <= 0) {
     throw new Error('Enter a size limit above 0 KB.')
   }
-  const maxBytes = Math.floor(maxKB * 1024)
+  const maxBytes = maxBytesFor(maxKB)
 
   // Recompressing can only lose quality, so leave a file that already fits.
   // Black and white is a change the user asked for, so it is still applied.

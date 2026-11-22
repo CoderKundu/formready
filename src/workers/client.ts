@@ -10,6 +10,8 @@ export type {
   AutoCropResult,
   Face,
   FaceDetection,
+  FitSizeOptions,
+  FitSizeResult,
   BlobInfo,
   Capabilities,
   CompressOptions,

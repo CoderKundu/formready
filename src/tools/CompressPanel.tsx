@@ -1,4 +1,5 @@
 import { useEffect, useId, useRef, useState, type FormEvent } from 'react'
+import { maxBytesFor, toKB } from '../workers/kilobytes'
 import {
   COMPRESSION_LEVELS,
   getProcessor,
@@ -19,7 +20,6 @@ const QUICK_LIMITS = [100, 200, 300, 500]
 // Whether Ghostscript is already loaded in the worker this session.
 let compressorReady = false
 
-const toKB = (bytes: number) => Math.round((bytes / 1024) * 10) / 10
 
 type Outcome =
   | { kind: 'already-fits'; maxKB: number }
@@ -76,7 +76,7 @@ export default function CompressPanel({ source, sourceKilobytes }: CompressPanel
     const id = ++run.current
     try {
       // A file that already fits needs no compressor download.
-      if (source.size <= limit * 1024 && !grayscale) {
+      if (source.size <= maxBytesFor(limit) && !grayscale) {
         setError(null)
         setOutcome({ kind: 'already-fits', maxKB: limit })
         return
