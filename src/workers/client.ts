@@ -20,6 +20,9 @@ export type {
   Rect,
   ResizedImage,
   ResizeOptions,
+  SignatureOptions,
+  SignatureProblem,
+  SignatureResult,
   SizeTargetOptions,
   SizeTargetResult,
 } from './processing-api'

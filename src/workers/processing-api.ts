@@ -16,6 +16,7 @@ import { createCompressor } from './ghostscript'
 import { autoCropPortrait } from './image/auto-crop'
 import { detectFaces } from './image/face'
 import { inspectImage, resizeImage } from './image/resize'
+import { cleanSignature } from './image/signature'
 import { inspectPdf, mergePdfPages } from './pdf'
 import { compressToSize, type Attempt, type SizeTargetOptions } from './target-size'
 
@@ -24,6 +25,7 @@ export type { AutoCropOptions, AutoCropProblem, AutoCropResult } from './image/a
 export type { FaceDetection } from './image/face'
 export type { Face } from './image/portrait'
 export type { ImageInfo, Rect, ResizedImage, ResizeOptions } from './image/resize'
+export type { SignatureOptions, SignatureProblem, SignatureResult } from './image/signature'
 export type { PageRef, PdfInfo } from './pdf'
 export type { Attempt, SizeTargetOptions, SizeTargetResult } from './target-size'
 
@@ -125,6 +127,11 @@ export const processingApi = {
   // head filling `headCoverage` of the height. Falls back to a centre crop
   // when there is no face, and lists anything the user should check.
   autoCropPortrait,
+
+  // Cleans a phone photo of a signature: finds the ink despite shadows and
+  // paper texture, drops the background, crops to the ink and fits it to
+  // the portal's size on white.
+  cleanSignature,
 }
 
 export type ProcessingApi = typeof processingApi

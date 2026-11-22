@@ -106,9 +106,9 @@ export async function resizeImage(blob: Blob, options: ResizeOptions): Promise<R
   }
 }
 
-// Copies `source` from the bitmap at `size`, halving step by step so a big
+// Copies `source` from the image at `size`, halving step by step so a big
 // reduction stays smooth.
-function drawScaled(bitmap: ImageBitmap, source: Rect, size: Size): OffscreenCanvas {
+export function drawScaled(bitmap: ImageBitmap | OffscreenCanvas, source: Rect, size: Size): OffscreenCanvas {
   let canvas = new OffscreenCanvas(Math.round(source.width), Math.round(source.height))
   let context = canvas.getContext('2d')!
   context.drawImage(bitmap, source.x, source.y, source.width, source.height, 0, 0, canvas.width, canvas.height)
