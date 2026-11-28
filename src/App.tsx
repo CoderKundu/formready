@@ -1,5 +1,7 @@
 import { lazy, Suspense } from 'react'
 import ExamFlow from './flow/ExamFlow'
+import OfflineNotices from './offline/OfflineNotices'
+import OfflinePanel from './offline/OfflinePanel'
 
 // Loaded on demand: PDF.js and the drag-and-drop code are large, and most
 // visitors will not open every tool.
@@ -8,6 +10,7 @@ const PdfMerger = lazy(() => import('./tools/PdfMerger'))
 function App() {
   return (
     <main className="page">
+      <OfflineNotices />
       <header className="intro">
         <p className="eyebrow">FormReady</p>
         <h1>Exam-ready photos, signatures and PDFs</h1>
@@ -28,6 +31,8 @@ function App() {
           <PdfMerger />
         </Suspense>
       </section>
+
+      <OfflinePanel />
 
       <footer className="footer">Free software under the AGPL-3.0 licence.</footer>
     </main>

@@ -200,3 +200,66 @@ h3 {
   clip: rect(0 0 0 0);
   white-space: nowrap;
 }
+
+/* Notices and offline mode */
+
+.notice {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 16px;
+  padding: 12px 16px;
+  border: 1px solid var(--warn);
+  border-radius: 10px;
+  background: var(--surface);
+}
+
+.offline-panel {
+  display: grid;
+  gap: 10px;
+  padding: 16px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface);
+}
+
+.offline-panel[open] > * + * {
+  margin-top: 10px;
+}
+
+.offline-panel summary {
+  min-height: 28px;
+  font-weight: 700;
+  color: var(--text-strong);
+  cursor: pointer;
+}
+
+.offline-list {
+  display: grid;
+  gap: 4px;
+}
+
+.offline-list li {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 4px 16px;
+  padding: 6px 0;
+  border-top: 1px solid var(--border);
+}
+
+.offline-saved {
+  font-weight: 600;
+  color: var(--ok);
+}
+
+.offline-progress {
+  display: grid;
+  gap: 6px;
+}
+
+.offline-progress progress {
+  width: 100%;
+  accent-color: var(--accent);
+}
