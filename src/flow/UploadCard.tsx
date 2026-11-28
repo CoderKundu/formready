@@ -1,4 +1,4 @@
-import { useId, type ChangeEvent } from 'react'
+import { useId, useState, type ChangeEvent } from 'react'
 import type { Upload } from '../presets'
 import { outputSizeFor } from '../presets/output-size'
 import { prepareImage, preparePdf, type ImageSettings } from './prepare'
@@ -28,18 +28,41 @@ const KIND_HINTS: Record<Upload['kind'], string> = {
   document: 'A scan or clear photo of the document.',
 }
 
+// Widest the prepared picture is drawn; see .upload-preview in flow.css.
+const PREVIEW_MAX = 240
+
+// Sizes as people read them: KB under 1 MB, MB above.
+function formatBytes(bytes: number): string {
+  const kb = bytes / 1024
+  return kb < 1024 ? `${kb < 10 ? kb.toFixed(1) : Math.round(kb)} KB` : `${(kb / 1024).toFixed(1)} MB`
+}
+
+// "88% smaller", or "larger" when padding made the file grow.
+function change(before: number, after: number): string {
+  if (before === 0) return ''
+  const percent = Math.round((Math.abs(before - after) / before) * 100)
+  if (percent === 0) return ', about the same size'
+  return `, ${percent}% ${after < before ? 'smaller' : 'larger'}`
+}
+
 export default function UploadCard({ upload, state, onChange }: UploadCardProps) {
   const inputId = useId()
   const isPdf = upload.format === 'pdf'
   const size = outputSizeFor(upload)
 
   const previewUrl = isPdf ? undefined : state.fileUrl
+  // Pixel size of the original, read when its picture loads.
+  const [original, setOriginal] = useState<{ url: string; width: number; height: number }>()
+  const originalSize = original && original.url === state.originalUrl ? original : undefined
+  const originalBytes = state.files.reduce((sum, file) => sum + file.size, 0)
 
   async function run(files: File[], settings: ImageSettings) {
     if (files.length === 0) return
     // The address of the file being replaced, freed once the new one is shown.
     const previousUrl = state.fileUrl
-    onChange((current) => ({ ...current, files, settings, busy: true, error: undefined }))
+    const previousOriginal = state.originalUrl
+    const originalUrl = isPdf ? undefined : URL.createObjectURL(files[0])
+    onChange((current) => ({ ...current, files, settings, originalUrl, busy: true, error: undefined }))
     try {
       const prepared = isPdf ? await preparePdf(upload, files) : await prepareImage(upload, files[0], settings)
       const fileUrl = URL.createObjectURL(prepared.blob)
@@ -54,6 +77,7 @@ export default function UploadCard({ upload, state, onChange }: UploadCardProps)
       }))
     }
     if (previousUrl) URL.revokeObjectURL(previousUrl)
+    if (previousOriginal) URL.revokeObjectURL(previousOriginal)
   }
 
   function choose(event: ChangeEvent<HTMLInputElement>) {
@@ -141,14 +165,56 @@ export default function UploadCard({ upload, state, onChange }: UploadCardProps)
 
       {state.prepared && !state.busy && (
         <div className="upload-result">
-          {previewUrl && (
-            <img
-              className={`upload-preview upload-preview-${upload.kind}`}
-              src={previewUrl}
-              width={state.prepared.width}
-              height={state.prepared.height}
-              alt={`Prepared ${upload.label.toLowerCase()}`}
-            />
+          {previewUrl && state.originalUrl && (
+            <div className="compare">
+              <figure className="compare-side">
+                <img
+                  className="compare-before"
+                  src={state.originalUrl}
+                  alt={`Your original ${upload.label.toLowerCase()}`}
+                  onLoad={(event) => {
+                    const image = event.currentTarget
+                    setOriginal({ url: image.src, width: image.naturalWidth, height: image.naturalHeight })
+                  }}
+                />
+                <figcaption>
+                  <strong>Before</strong>
+                  <span>
+                    {originalSize ? `${originalSize.width} × ${originalSize.height} px · ` : ''}
+                    {formatBytes(originalBytes)}
+                  </span>
+                </figcaption>
+              </figure>
+              <span className="compare-arrow" aria-hidden="true">
+                →
+              </span>
+              <figure className="compare-side">
+                <img
+                  className={`upload-preview upload-preview-${upload.kind}`}
+                  src={previewUrl}
+                  width={state.prepared.width}
+                  height={state.prepared.height}
+                  alt={`Prepared ${upload.label.toLowerCase()}`}
+                />
+                <figcaption>
+                  <strong>After</strong>
+                  <span>
+                    {state.prepared.width} × {state.prepared.height} px · {formatBytes(state.prepared.bytes)}
+                  </span>
+                  {(state.prepared.width ?? Infinity) <= PREVIEW_MAX && (
+                    <span className="compare-note">Shown at its real size in pixels</span>
+                  )}
+                </figcaption>
+              </figure>
+            </div>
+          )}
+          {isPdf && (
+            <p className="compare-pdf">
+              <strong>Before:</strong> {state.files.length} {state.files.length === 1 ? 'file' : 'files'},{' '}
+              {formatBytes(originalBytes)} <span aria-hidden="true">→</span> <strong>After:</strong>{' '}
+              {state.prepared.pages} {state.prepared.pages === 1 ? 'page' : 'pages'}, {formatBytes(state.prepared.bytes)}
+              {change(originalBytes, state.prepared.bytes)}
+            </p>
           )}
           <div className="upload-result-text">
             <p className="upload-verdict">

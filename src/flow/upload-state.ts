@@ -10,6 +10,8 @@ export interface UploadState {
   // blob: address of the prepared file, for the preview and the download.
   // Made when the file is prepared and freed when it is replaced.
   fileUrl?: string
+  // blob: address of the photo as chosen, for the before/after view.
+  originalUrl?: string
   error?: string
 }
 
