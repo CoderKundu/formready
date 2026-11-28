@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { getPreset, type Preset } from '../presets'
+import DownloadAll from './DownloadAll'
 import ExamPicker from './ExamPicker'
 import { STEP_ORDER, isStepId, stepsFor, type StepId } from './steps'
 import UploadCard from './UploadCard'
@@ -154,6 +155,8 @@ export default function ExamFlow() {
           </button>
         )}
       </div>
+
+      <DownloadAll preset={preset} prepared={(uploadId) => uploads[key(uploadId)]?.prepared} />
 
       <p className="flow-source">
         Rules from{' '}

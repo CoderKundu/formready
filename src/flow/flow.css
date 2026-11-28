@@ -417,3 +417,32 @@
     font-weight: 600;
   }
 }
+
+/* Download all */
+
+.download-all {
+  display: grid;
+  gap: 8px;
+  padding: 16px;
+  border: 1px solid var(--accent);
+  border-radius: 12px;
+  background: var(--accent-soft);
+}
+
+.download-all h2 {
+  font-size: 1.1rem;
+}
+
+.download-all p {
+  overflow-wrap: anywhere;
+}
+
+.download-all-warning::before {
+  content: '! ';
+  font-weight: 700;
+  color: var(--warn);
+}
+
+.download-all-note {
+  font-size: 0.85rem;
+}
